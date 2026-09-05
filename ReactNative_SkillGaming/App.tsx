@@ -23,15 +23,48 @@ function App() {
   );
 }
 
+import UnityView from '@azesmway/react-native-unity';
+import { useEffect, useRef } from 'react';
+
+interface IMessage {
+  gameObject: string;
+  methodName: string;
+  message: string;
+}
+
 function AppContent() {
   const safeAreaInsets = useSafeAreaInsets();
 
+  const unityRef = useRef<UnityView>(null);
+
+  useEffect(() => {
+    if (unityRef?.current) {
+      const message: IMessage = {
+        gameObject: 'gameObject',
+        methodName: 'methodName',
+        message: 'message',
+      };
+      unityRef.current.postMessage(
+        message.gameObject,
+        message.methodName,
+        message.message
+      );
+    }
+  }, []);
+
   return (
     <View style={styles.container}>
-      <NewAppScreen
+      <UnityView
+        ref={unityRef}
+        style={{ flex: 1 }}
+        onUnityMessage={(result) => {
+          console.log('onUnityMessage', result.nativeEvent.message);
+        }}
+      />
+      {/* <NewAppScreen
         templateFileName="App.tsx"
         safeAreaInsets={safeAreaInsets}
-      />
+      /> */}
     </View>
   );
 }

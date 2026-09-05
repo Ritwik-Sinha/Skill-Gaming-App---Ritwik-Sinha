@@ -17,5 +17,14 @@ buildscript {
         classpath("org.jetbrains.kotlin:kotlin-gradle-plugin")
     }
 }
+allprojects {
+  repositories {
+    // this
+    flatDir {
+        dirs "${project(':unityLibrary').projectDir}/libs"
+    }
+    // ...
+  }
+}
 
 apply plugin: "com.facebook.react.rootproject"
