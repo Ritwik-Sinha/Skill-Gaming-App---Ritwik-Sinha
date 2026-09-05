@@ -38,6 +38,11 @@
 # Visual Studio cache directory
 .vs/
 
+# Agent configuration
+.claude/
+.agents/
+Agents.md
+
 # Gradle cache directory
 .gradle/
 
