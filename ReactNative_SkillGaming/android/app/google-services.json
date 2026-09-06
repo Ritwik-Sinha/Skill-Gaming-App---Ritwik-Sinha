@@ -1,0 +1,47 @@
+{
+  "project_info": {
+    "project_number": "525394427013",
+    "project_id": "skillgaming-b93ea",
+    "storage_bucket": "skillgaming-b93ea.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:525394427013:android:42b564ec01e7aa5383fdec",
+        "android_client_info": {
+          "package_name": "com.skillgaming"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "525394427013-3nmr35ifr9p0cptdp9bvnbtsf63t2nsq.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.skillgaming",
+            "certificate_hash": "5e8f16062ea3cd2c4a0d547876baa6f38cabf625"
+          }
+        },
+        {
+          "client_id": "525394427013-2r7c8pfmnkn53ifci2jru0ht2va60shq.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD7iPugbBfVKASyDzFaRGAnnNb1G9A5Ll8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "525394427013-2r7c8pfmnkn53ifci2jru0ht2va60shq.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

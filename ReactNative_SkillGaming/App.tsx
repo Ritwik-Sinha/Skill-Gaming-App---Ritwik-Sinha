@@ -1,16 +1,25 @@
 /**
- * Sample React Native App
- * https://github.com/facebook/react-native
+ * Skill Gaming app entry point.
+ *
+ * The Unity view is auth-gated: <GameScreen /> (and therefore <UnityView />)
+ * is only mounted once a Google sign-in has completed. Connection values for
+ * Google OAuth live in src/config/authConfig.ts.
  *
  * @format
  */
 
-import { NewAppScreen } from '@react-native/new-app-screen';
-import { StatusBar, StyleSheet, useColorScheme, View } from 'react-native';
+import React from 'react';
 import {
-  SafeAreaProvider,
-  useSafeAreaInsets,
-} from 'react-native-safe-area-context';
+  ActivityIndicator,
+  StatusBar,
+  StyleSheet,
+  useColorScheme,
+  View,
+} from 'react-native';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { AuthProvider, useAuth } from './src/auth/AuthContext';
+import SignInScreen from './src/screens/SignInScreen';
+import GameScreen from './src/screens/GameScreen';
 
 function App() {
   const isDarkMode = useColorScheme() === 'dark';
@@ -18,60 +27,37 @@ function App() {
   return (
     <SafeAreaProvider>
       <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} />
-      <AppContent />
+      <AuthProvider>
+        <AppContent />
+      </AuthProvider>
     </SafeAreaProvider>
   );
 }
 
-import UnityView from '@azesmway/react-native-unity';
-import { useEffect, useRef } from 'react';
-
-interface IMessage {
-  gameObject: string;
-  methodName: string;
-  message: string;
-}
-
 function AppContent() {
-  const safeAreaInsets = useSafeAreaInsets();
+  const { user, isRestoring } = useAuth();
 
-  const unityRef = useRef<UnityView>(null);
+  if (isRestoring) {
+    return (
+      <View style={styles.loading}>
+        <ActivityIndicator size="large" color="#4285F4" />
+      </View>
+    );
+  }
 
-  useEffect(() => {
-    if (unityRef?.current) {
-      const message: IMessage = {
-        gameObject: 'gameObject',
-        methodName: 'methodName',
-        message: 'message',
-      };
-      unityRef.current.postMessage(
-        message.gameObject,
-        message.methodName,
-        message.message
-      );
-    }
-  }, []);
+  if (!user) {
+    return <SignInScreen />;
+  }
 
-  return (
-    <View style={styles.container}>
-      <UnityView
-        ref={unityRef}
-        style={{ flex: 1 }}
-        onUnityMessage={(result) => {
-          console.log('onUnityMessage', result.nativeEvent.message);
-        }}
-      />
-      {/* <NewAppScreen
-        templateFileName="App.tsx"
-        safeAreaInsets={safeAreaInsets}
-      /> */}
-    </View>
-  );
+  return <GameScreen />;
 }
 
 const styles = StyleSheet.create({
-  container: {
+  loading: {
     flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#101820',
   },
 });
 

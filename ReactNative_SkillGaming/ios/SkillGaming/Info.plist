@@ -22,6 +22,18 @@
 	<string>$(MARKETING_VERSION)</string>
 	<key>CFBundleSignature</key>
 	<string>????</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<!-- TODO: Replace with your REVERSED iOS client ID from Google Cloud Console.
+				     If your iOS client ID is 1234-abcd.apps.googleusercontent.com, the
+				     reversed form is com.googleusercontent.apps.1234-abcd -->
+				<string>com.googleusercontent.apps.525394427013-2r7c8pfmnkn53ifci2jru0ht2va60shq</string>
+			</array>
+		</dict>
+	</array>
 	<key>CFBundleVersion</key>
 	<string>$(CURRENT_PROJECT_VERSION)</string>
 	<key>LSRequiresIPhoneOS</key>
