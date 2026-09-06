@@ -1,16 +1,30 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../auth/AuthContext';
+
+interface UserHeaderProps {
+  /**
+   * Runs (and is awaited) before the session is signed out. GameScreen uses
+   * it to send the Unity game back to its title screen while the engine is
+   * still active, so the parked engine is clean for the next session.
+   */
+  onBeforeSignOut?: () => void | Promise<void>;
+}
 
 /**
  * Compact bar above the Unity view showing the signed-in user's photo and
  * name, with a sign-out action. Falls back to the user's initials when
  * Google returns no profile photo.
  */
-function UserHeader() {
+function UserHeader({ onBeforeSignOut }: UserHeaderProps) {
   const { user, signOut } = useAuth();
   const insets = useSafeAreaInsets();
+
+  const handleSignOut = useCallback(async () => {
+    await onBeforeSignOut?.();
+    await signOut();
+  }, [onBeforeSignOut, signOut]);
 
   if (!user) {
     return null;
@@ -36,7 +50,7 @@ function UserHeader() {
       <Text style={styles.name} numberOfLines={1}>
         {displayName}
       </Text>
-      <Pressable onPress={signOut} hitSlop={8}>
+      <Pressable onPress={handleSignOut} hitSlop={8}>
         <Text style={styles.signOut}>Sign out</Text>
       </Pressable>
     </View>

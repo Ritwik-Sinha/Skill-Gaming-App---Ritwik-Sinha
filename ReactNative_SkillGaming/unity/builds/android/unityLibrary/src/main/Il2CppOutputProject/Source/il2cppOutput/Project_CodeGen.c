@@ -70,6 +70,7 @@ extern void GameManager_Update_m203AFE31A6C48E7488F59EF4AAD9BDAB37C6937D (void);
 extern void GameManager_PressedDown_mABC73B382B3B8973D20EC4A1737B9C5B55CA76D7 (void);
 extern void GameManager_PlayerEaten_mD4529AD0999B591ACDA16CD6775322FC9C61B1A6 (void);
 extern void GameManager_StartDying_m8CBE193F1E3931736781B9D4BA7E653E99A6D10F (void);
+extern void GameManager_ResetToTitle_m4F61C645BE1CF658F4829B81F835FDAF68E7B26F (void);
 extern void GameManager_ResetRun_mF81E092D7A761A788853787B22DAD3D7A5EE79AA (void);
 extern void GameManager__ctor_mE921BF44A6F62AC6A3B6383805AA3ABB581DE5A9 (void);
 extern void Haptics_Init_mDD5ED9840AAE298070FB1288A75D754F19667E5A (void);
@@ -199,7 +200,7 @@ extern void WorldGenerator_MakeTuft_m2859B960042049A6FBD0583A788183FF257FB187 (v
 extern void WorldGenerator_Cull_m243939D600F0A91164DC1F44D4DD511F5A24367D (void);
 extern void WorldGenerator_FindSwing_mCBD0FB7726E49C0777106FCD9B4D1BA8BE8684DC (void);
 extern void WorldGenerator__ctor_m295299EAA17F1DACACB9E29D264297EAF148C0D5 (void);
-static Il2CppMethodPointer s_methodPointers[192] = 
+static Il2CppMethodPointer s_methodPointers[193] = 
 {
 	NativeAPI__ctor_m1F351BD5727476B8990814C81D6B77124FD77180,
 	ButtonBehavior_ButtonPressed_mF802FAE45BAEEE756E6BDFAEEA8C7764A5F69BCC,
@@ -264,6 +265,7 @@ static Il2CppMethodPointer s_methodPointers[192] =
 	GameManager_PressedDown_mABC73B382B3B8973D20EC4A1737B9C5B55CA76D7,
 	GameManager_PlayerEaten_mD4529AD0999B591ACDA16CD6775322FC9C61B1A6,
 	GameManager_StartDying_m8CBE193F1E3931736781B9D4BA7E653E99A6D10F,
+	GameManager_ResetToTitle_m4F61C645BE1CF658F4829B81F835FDAF68E7B26F,
 	GameManager_ResetRun_mF81E092D7A761A788853787B22DAD3D7A5EE79AA,
 	GameManager__ctor_mE921BF44A6F62AC6A3B6383805AA3ABB581DE5A9,
 	Haptics_Init_mDD5ED9840AAE298070FB1288A75D754F19667E5A,
@@ -394,7 +396,7 @@ static Il2CppMethodPointer s_methodPointers[192] =
 	WorldGenerator_FindSwing_mCBD0FB7726E49C0777106FCD9B4D1BA8BE8684DC,
 	WorldGenerator__ctor_m295299EAA17F1DACACB9E29D264297EAF148C0D5,
 };
-static const int32_t s_InvokerIndices[192] = 
+static const int32_t s_InvokerIndices[193] = 
 {
 	6492,
 	6492,
@@ -459,6 +461,7 @@ static const int32_t s_InvokerIndices[192] =
 	9006,
 	6492,
 	6492,
+	5165,
 	6492,
 	6492,
 	9090,
@@ -593,7 +596,7 @@ IL2CPP_EXTERN_C const Il2CppCodeGenModule g_Project_CodeGenModule;
 const Il2CppCodeGenModule g_Project_CodeGenModule = 
 {
 	"Project.dll",
-	192,
+	193,
 	s_methodPointers,
 	0,
 	NULL,
