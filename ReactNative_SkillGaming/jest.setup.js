@@ -51,3 +51,32 @@ jest.mock('@react-native-google-signin/google-signin', () => {
     isErrorWithCode: error => !!error && error.code !== undefined,
   };
 });
+
+// Firebase JS SDK — no network, no persisted session in tests.
+jest.mock('firebase/app', () => ({
+  getApps: jest.fn(() => []),
+  initializeApp: jest.fn(() => ({ name: '[DEFAULT]' })),
+}));
+
+jest.mock('firebase/auth', () => ({
+  initializeAuth: jest.fn(() => ({ currentUser: null })),
+  getAuth: jest.fn(() => ({ currentUser: null })),
+  getReactNativePersistence: jest.fn(() => ({})),
+  onAuthStateChanged: jest.fn((_auth, callback) => {
+    callback(null);
+    return jest.fn(); // unsubscribe
+  }),
+  GoogleAuthProvider: {
+    credential: jest.fn(() => ({ providerId: 'google.com' })),
+  },
+  signInWithCredential: jest.fn(),
+  signOut: jest.fn().mockResolvedValue(undefined),
+}));
+
+jest.mock('firebase/functions', () => ({
+  getFunctions: jest.fn(() => ({})),
+  connectFunctionsEmulator: jest.fn(),
+  httpsCallable: jest.fn(() =>
+    jest.fn().mockResolvedValue({ data: { user: null } })
+  ),
+}));

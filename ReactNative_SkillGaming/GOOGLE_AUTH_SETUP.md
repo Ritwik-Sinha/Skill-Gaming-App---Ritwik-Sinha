@@ -10,7 +10,7 @@ sign-in dialog will fail until you fill in real client IDs.
 | File | Purpose |
 | --- | --- |
 | `src/config/authConfig.ts` | **All connection values (placeholders) live here.** |
-| `src/auth/AuthContext.tsx` | `AuthProvider` / `useAuth()` — sign-in, sign-out, session restore. Persists the user profile (name, email, photo, id, idToken) to AsyncStorage under `@skillgaming/auth_user`. |
+| `src/auth/AuthContext.tsx` | `AuthProvider` / `useAuth()` — Google sign-in → Firebase Auth → `onUserLogin` Cloud Function, sign-out, session restore. Persists the user profile (uid, name, email, photo, id, idToken) to AsyncStorage under `@skillgaming/auth_user`. See `FIREBASE_BACKEND_SETUP.md`. |
 | `src/screens/SignInScreen.tsx` | Shown while signed out (Google sign-in button). |
 | `src/screens/GameScreen.tsx` | Unity view + user header; only mounted when authenticated. |
 | `src/components/UserHeader.tsx` | Displays the signed-in user's photo (or initials) and name, with sign-out. |
@@ -21,8 +21,9 @@ Anywhere in the app you can read the user with:
 ```tsx
 import { useAuth } from './src/auth/AuthContext';
 
-const { user } = useAuth();
-// user.name, user.photo, user.email, user.id, user.idToken
+const { user, profile } = useAuth();
+// user.uid (Firebase UID), user.name, user.photo, user.email, user.id, user.idToken
+// profile → the player's row in the backend (see FIREBASE_BACKEND_SETUP.md)
 ```
 
 ## Values you must fill in
@@ -60,8 +61,9 @@ Create an OAuth client of type **Android** with:
   ```
 
 Nothing gets pasted into the repo for this one — it just has to exist in the
-same Cloud Console project as the web client ID. No `google-services.json`
-is needed (we're not using Firebase for auth).
+same Cloud Console project as the web client ID. The `google-services.json`
+in `android/app/` is not read by the app (it uses the Firebase JS SDK, not
+`@react-native-firebase`); it is harmless to keep.
 
 ## After filling in values
 
@@ -77,9 +79,8 @@ Note: `pod install` currently fails at the `react-native-unity` copy step
 because `unity/builds/ios/` doesn't exist yet — export the Unity project for
 iOS to that folder first. The Google Sign-In pods themselves resolve fine.
 
-## Later: hooking auth to Supabase
+## Firebase Auth + backend
 
-`user.idToken` is stored with the profile. When you're ready, exchange it
-server-side (e.g. `supabase.auth.signInWithIdToken({ provider: 'google', token: idToken })`)
-— set `offlineAccess: true` in `authConfig.ts` if you also need a
-`serverAuthCode`.
+The Google ID token is exchanged for a Firebase session and the backend is
+notified through the `onUserLogin` Cloud Function. Setup steps, files and
+troubleshooting are in `FIREBASE_BACKEND_SETUP.md`.

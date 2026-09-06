@@ -4,6 +4,7 @@ import React, {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
@@ -13,13 +14,30 @@ import {
   isSuccessResponse,
   statusCodes,
 } from '@react-native-google-signin/google-signin';
+import {
+  GoogleAuthProvider,
+  onAuthStateChanged,
+  signInWithCredential,
+  signOut as firebaseSignOut,
+  type User as FirebaseUser,
+} from 'firebase/auth';
 import { GOOGLE_AUTH_CONFIG } from '../config/authConfig';
+import { firebaseAuth } from '../services/firebase';
+import { syncUserAfterLogin, type BackendUser } from '../services/userApi';
 
 /**
  * The signed-in user's profile, persisted in AsyncStorage so the name and
  * photo are available for display anywhere in the app (and across restarts).
+ *
+ * Sign-in flow: Google Sign-In (native dialog) → Firebase Auth
+ * (`signInWithCredential`, which is what makes the account appear under
+ * Firebase Console → Authentication → Users) → `onUserLogin` Cloud Function
+ * (upserts public.users and returns `profile`).
  */
 export interface AuthUser {
+  /** Firebase Auth UID — the key the backend uses (public.users.firebase_uid). */
+  uid: string;
+  /** Google account id. Prefer `uid` for anything that talks to the backend. */
   id: string;
   name: string | null;
   email: string;
@@ -34,6 +52,12 @@ const STORAGE_KEY = '@skillgaming/auth_user';
 interface AuthContextValue {
   /** null while signed out. */
   user: AuthUser | null;
+  /**
+   * The player's row in the backend, from the `onUserLogin` callable.
+   * null until the first sync completes (on a restored session it loads in
+   * the background, so it can briefly be null while `user` is set).
+   */
+  profile: BackendUser | null;
   /** true while the persisted session is being restored on app launch. */
   isRestoring: boolean;
   /** true while an interactive sign-in is in flight. */
@@ -46,7 +70,7 @@ interface AuthContextValue {
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
-function toAuthUser(data: {
+interface GoogleSignInData {
   user: {
     id: string;
     name: string | null;
@@ -56,8 +80,11 @@ function toAuthUser(data: {
     familyName: string | null;
   };
   idToken: string | null;
-}): AuthUser {
+}
+
+function toAuthUser(data: GoogleSignInData, uid: string): AuthUser {
   return {
+    uid,
     id: data.user.id,
     name: data.user.name,
     email: data.user.email,
@@ -68,11 +95,79 @@ function toAuthUser(data: {
   };
 }
 
+/** Fallback when Firebase restored a session but nothing is cached locally. */
+function fromFirebaseUser(fbUser: FirebaseUser): AuthUser {
+  return {
+    uid: fbUser.uid,
+    id: fbUser.providerData[0]?.uid ?? fbUser.uid,
+    name: fbUser.displayName,
+    email: fbUser.email ?? '',
+    photo: fbUser.photoURL,
+    givenName: null,
+    familyName: null,
+    idToken: null,
+  };
+}
+
+async function readCachedUser(): Promise<AuthUser | null> {
+  try {
+    const stored = await AsyncStorage.getItem(STORAGE_KEY);
+    if (!stored) {
+      return null;
+    }
+    const parsed = JSON.parse(stored) as Partial<AuthUser>;
+    // Entries written before Firebase Auth was added have no uid; ignore them.
+    return typeof parsed.uid === 'string' ? (parsed as AuthUser) : null;
+  } catch {
+    return null;
+  }
+}
+
+async function cacheUser(user: AuthUser | null): Promise<void> {
+  try {
+    if (user) {
+      await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(user));
+    } else {
+      await AsyncStorage.removeItem(STORAGE_KEY);
+    }
+  } catch {
+    // Caching is a display convenience; never fail auth over it.
+  }
+}
+
+function describeSignInError(e: unknown): string {
+  if (isErrorWithCode(e)) {
+    const code = String(e.code);
+    switch (code) {
+      case statusCodes.IN_PROGRESS:
+        return 'A sign-in is already in progress.';
+      case statusCodes.PLAY_SERVICES_NOT_AVAILABLE:
+        return 'Google Play Services is not available on this device.';
+      default:
+        if (code.startsWith('auth/')) {
+          // Thrown by Firebase, e.g. auth/invalid-credential when the Google
+          // provider is disabled or the web client ID does not match.
+          return `Firebase rejected the sign-in (${code}). Check that Google is enabled under Authentication → Sign-in method.`;
+        }
+        return `Sign-in failed (${code}). Please try again.`;
+    }
+  }
+  return 'Sign-in failed. Please try again.';
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
+  const [profile, setProfile] = useState<BackendUser | null>(null);
   const [isRestoring, setIsRestoring] = useState(true);
   const [isSigningIn, setIsSigningIn] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Set while signIn() owns the Firebase session, so the onAuthStateChanged
+  // listener below leaves that flow alone instead of handling it twice.
+  const interactiveSignIn = useRef(false);
+  // UID that signIn() has already synced with the backend in this JS session.
+  // Firebase delivers auth events asynchronously, so this covers a listener
+  // callback that lands after signIn() has finished.
+  const syncedUid = useRef<string | null>(null);
 
   useEffect(() => {
     GoogleSignin.configure({
@@ -82,77 +177,126 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       profileImageSize: GOOGLE_AUTH_CONFIG.profileImageSize,
     });
 
-    const restoreSession = async () => {
-      try {
-        const stored = await AsyncStorage.getItem(STORAGE_KEY);
-        if (stored) {
-          setUser(JSON.parse(stored));
-        }
-        // Refresh the profile/token in the background when Google still has
-        // a valid session; keeps the stored copy up to date.
-        const response = await GoogleSignin.signInSilently();
-        if (response.type === 'success') {
-          const refreshed = toAuthUser(response.data);
-          setUser(refreshed);
-          await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(refreshed));
-        }
-      } catch {
-        // Silent sign-in is best-effort; fall back to whatever was stored.
-      } finally {
+    // Firebase restores its own session from AsyncStorage and reports it here:
+    // once on launch (user or null) and after every sign-in / sign-out.
+    const unsubscribe = onAuthStateChanged(firebaseAuth, async fbUser => {
+      if (!fbUser) {
+        syncedUid.current = null;
+        setUser(null);
+        setProfile(null);
         setIsRestoring(false);
+        return;
       }
-    };
+      if (interactiveSignIn.current || syncedUid.current === fbUser.uid) {
+        return; // signIn() populates state itself once the backend confirms.
+      }
 
-    restoreSession();
+      // Restored session: show the cached Google profile immediately, then
+      // refresh both it and the backend row in the background.
+      const cached = await readCachedUser();
+      const restored =
+        cached && cached.uid === fbUser.uid ? cached : fromFirebaseUser(fbUser);
+      setUser(restored);
+      setIsRestoring(false);
+
+      GoogleSignin.signInSilently()
+        .then(async response => {
+          if (response.type === 'success') {
+            const refreshed = toAuthUser(response.data, fbUser.uid);
+            setUser(refreshed);
+            await cacheUser(refreshed);
+          }
+        })
+        .catch(() => {
+          // Best-effort only; the Firebase session is what keeps us signed in.
+        });
+
+      syncUserAfterLogin()
+        .then(setProfile)
+        .catch(e => {
+          console.warn('[auth] onUserLogin failed while restoring session:', e);
+        });
+    });
+
+    return unsubscribe;
   }, []);
 
   const signIn = useCallback(async () => {
     setError(null);
     setIsSigningIn(true);
+    interactiveSignIn.current = true;
     try {
       await GoogleSignin.hasPlayServices({
         showPlayServicesUpdateDialog: true,
       });
       const response = await GoogleSignin.signIn();
-      if (isSuccessResponse(response)) {
-        const signedIn = toAuthUser(response.data);
-        setUser(signedIn);
-        await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(signedIn));
+      if (!isSuccessResponse(response)) {
+        return; // 'cancelled' → user dismissed the dialog; no error.
       }
-      // response.type === 'cancelled' → user dismissed the dialog; no error.
+
+      const { idToken } = response.data;
+      if (!idToken) {
+        setError(
+          'Google returned no ID token. Check webClientId in src/config/authConfig.ts.'
+        );
+        return;
+      }
+
+      // 1. Exchange the Google token for a Firebase session. This is the step
+      //    that creates/updates the account in Firebase Authentication.
+      const credential = GoogleAuthProvider.credential(idToken);
+      const { user: fbUser } = await signInWithCredential(
+        firebaseAuth,
+        credential
+      );
+
+      // 2. Register the login with the backend. If that fails we roll the
+      //    sign-in back, so a signed-in user always has a users row.
+      let backendUser: BackendUser;
+      try {
+        backendUser = await syncUserAfterLogin({
+          displayName: response.data.user.name,
+          photoUrl: response.data.user.photo,
+        });
+      } catch (e) {
+        console.warn('[auth] onUserLogin failed:', e);
+        await firebaseSignOut(firebaseAuth).catch(() => {});
+        await GoogleSignin.signOut().catch(() => {});
+        const code = (e as { code?: unknown })?.code;
+        setError(
+          `Signed in with Google, but the game server request failed (${
+            typeof code === 'string' ? code : 'unknown error'
+          }). Please try again.`
+        );
+        return;
+      }
+
+      const signedIn = toAuthUser(response.data, fbUser.uid);
+      await cacheUser(signedIn);
+      syncedUid.current = fbUser.uid;
+      setProfile(backendUser);
+      setUser(signedIn);
     } catch (e) {
-      if (isErrorWithCode(e)) {
-        switch (e.code) {
-          case statusCodes.IN_PROGRESS:
-            setError('A sign-in is already in progress.');
-            break;
-          case statusCodes.PLAY_SERVICES_NOT_AVAILABLE:
-            setError('Google Play Services is not available on this device.');
-            break;
-          default:
-            setError(`Sign-in failed (${e.code}). Please try again.`);
-        }
-      } else {
-        setError('Sign-in failed. Please try again.');
-      }
+      setError(describeSignInError(e));
     } finally {
+      interactiveSignIn.current = false;
       setIsSigningIn(false);
     }
   }, []);
 
   const signOut = useCallback(async () => {
-    try {
-      await GoogleSignin.signOut();
-    } catch {
-      // Even if Google sign-out fails, clear the local session.
-    }
-    await AsyncStorage.removeItem(STORAGE_KEY);
+    // Each step is best-effort: whatever happens, the local session is cleared.
+    await GoogleSignin.signOut().catch(() => {});
+    await firebaseSignOut(firebaseAuth).catch(() => {});
+    await cacheUser(null);
+    syncedUid.current = null;
+    setProfile(null);
     setUser(null);
   }, []);
 
   const value = useMemo(
-    () => ({ user, isRestoring, isSigningIn, error, signIn, signOut }),
-    [user, isRestoring, isSigningIn, error, signIn, signOut]
+    () => ({ user, profile, isRestoring, isSigningIn, error, signIn, signOut }),
+    [user, profile, isRestoring, isSigningIn, error, signIn, signOut]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
