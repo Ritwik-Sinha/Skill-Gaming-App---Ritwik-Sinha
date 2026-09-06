@@ -150,6 +150,22 @@ namespace JungleSwing
             diedAt = Time.time;
         }
 
+        /// <summary>Host-app entry point. The React Native shell calls
+        /// <c>UnitySendMessage("GameRoot", "ResetToTitle", "")</c> when the user signs out, so
+        /// a new session never inherits a run in progress or a game-over panel. Abandons the
+        /// current run without reporting a score and returns to the Ready (title) state. The
+        /// string parameter is required by UnitySendMessage and is unused.</summary>
+        public void ResetToTitle(string _)
+        {
+            Debug.Log("[JS] reset-to-title from host, state=" + State);
+            if (State == GameState.Ready)
+            {
+                hud.ShowReady();
+                return;
+            }
+            ResetRun();
+        }
+
         void ResetRun()
         {
             Destroy(Player.gameObject);
