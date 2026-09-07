@@ -1,4 +1,5 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+xmlns:tools="http://schemas.android.com/tools">>
 
     <uses-permission android:name="android.permission.INTERNET" />
 
@@ -23,5 +24,11 @@
             <category android:name="android.intent.category.LAUNCHER" />
         </intent-filter>
       </activity>
+
+      <!-- Keep the Unity activity, but remove its launcher filters. -->
+      <activity android:name="com.unity3d.player.UnityPlayerGameActivity">
+          <intent-filter tools:node="removeAll" />
+      </activity>
+    
     </application>
 </manifest>
