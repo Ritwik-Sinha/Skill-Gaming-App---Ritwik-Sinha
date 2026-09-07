@@ -5,9 +5,9 @@ EditorBuildSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 2
   m_Scenes:
-  - enabled: 0
-    path: Assets/Project/Scenes/JungleSwing.unity
-    guid: cf87624cf5d424637a30f9168178627b
+  - enabled: 1
+    path: Assets/Project/Scenes/LoadingScene.unity
+    guid: cf0f762c0b6aa4aa1bdd0a1c762ce759
   m_configObjects:
     com.unity.addressableassets: {fileID: 11400000, guid: 6f4b745a66ba54650a7e299c6848efb7, type: 2}
   m_UseUCBPForAssetBundles: 0
