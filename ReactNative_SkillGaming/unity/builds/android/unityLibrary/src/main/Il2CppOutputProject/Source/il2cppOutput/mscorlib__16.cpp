@@ -222,6 +222,7 @@ struct MethodBase_t;
 struct MethodInfo_t;
 struct MulticastDelegate_t;
 struct NotImplementedException_t6366FE4DCF15094C51F4833B91A2AE68D4DA90E8;
+struct NotNullAttribute_t386B91F50B01484462330C14571F010950329D13;
 struct NotNullWhenAttribute_t92EF646D689C17FD7F06267397C6BE502C62EA06;
 struct NumberFormatInfo_t8E26808B202927FEBF9064FCFEEA4D6E076E6472;
 struct ParameterInfo_tBC2D68304851A59EFB2EAE6B168714CD45445F2F;
@@ -1493,6 +1494,9 @@ struct MaybeNullWhenAttribute_t2B6287C94885E019C8862B2E8689438EE0A605D7  : publi
 	bool ___U3CReturnValueU3Ek__BackingField;
 };
 struct MethodBase_t  : public MemberInfo_t
+{
+};
+struct NotNullAttribute_t386B91F50B01484462330C14571F010950329D13  : public Attribute_tFDA8EFEFB0711976D22474794576DAF28F7440AA
 {
 };
 struct NotNullWhenAttribute_t92EF646D689C17FD7F06267397C6BE502C62EA06  : public Attribute_tFDA8EFEFB0711976D22474794576DAF28F7440AA
@@ -15732,6 +15736,21 @@ IL2CPP_EXTERN_C IL2CPP_METHOD_ATTR void EventSourceAttribute_set_Name_m059BF0157
 	}
 }
 IL2CPP_EXTERN_C IL2CPP_METHOD_ATTR void EventSourceAttribute__ctor_m5EC6B0E45D34CCA699909C6D3D096487C8F5BD9B (EventSourceAttribute_t26715FCD425D9AA129790DCE4B1F310FD879958F* __this, const RuntimeMethod* method) 
+{
+	{
+		Attribute__ctor_m79ED1BF1EE36D1E417BA89A0D9F91F8AAD8D19E2(__this, NULL);
+		return;
+	}
+}
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Winvalid-offsetof"
+#pragma clang diagnostic ignored "-Wunused-variable"
+#endif
+IL2CPP_EXTERN_C IL2CPP_METHOD_ATTR void NotNullAttribute__ctor_m50CF8968B1E8EE37DAD8A4180044A7C318BF7F79 (NotNullAttribute_t386B91F50B01484462330C14571F010950329D13* __this, const RuntimeMethod* method) 
 {
 	{
 		Attribute__ctor_m79ED1BF1EE36D1E417BA89A0D9F91F8AAD8D19E2(__this, NULL);
