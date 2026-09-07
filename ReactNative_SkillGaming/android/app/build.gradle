@@ -72,6 +72,43 @@ def enableProguardInReleaseBuilds = false
  */
 def jscFlavor = 'io.github.react-native-community:jsc-android:2026004.+'
 
+def releaseKeystorePropertiesFile = rootProject.file("keystore.properties")
+def releaseKeystoreProperties = new Properties()
+if (releaseKeystorePropertiesFile.exists()) {
+    releaseKeystorePropertiesFile.withInputStream {
+        releaseKeystoreProperties.load(it)
+    }
+}
+
+def requiredReleaseSigningProperties = [
+    "SKILLGAMING_UPLOAD_STORE_FILE",
+    "SKILLGAMING_UPLOAD_STORE_PASSWORD",
+    "SKILLGAMING_UPLOAD_KEY_ALIAS",
+    "SKILLGAMING_UPLOAD_KEY_PASSWORD",
+]
+def missingReleaseSigningProperties = requiredReleaseSigningProperties.findAll {
+    !releaseKeystoreProperties.getProperty(it)
+}
+if (releaseKeystorePropertiesFile.exists() && !missingReleaseSigningProperties.isEmpty()) {
+    throw new GradleException(
+        "Missing release signing properties in ${releaseKeystorePropertiesFile}: " +
+        missingReleaseSigningProperties.join(", ")
+    )
+}
+
+def releaseBuildRequested = gradle.startParameter.taskNames.any {
+    it.toLowerCase().contains("release")
+}
+if (releaseBuildRequested && !releaseKeystorePropertiesFile.exists()) {
+    throw new GradleException(
+        "Release signing is not configured. Copy android/keystore.properties.example " +
+        "to android/keystore.properties and provide the upload-keystore credentials."
+    )
+}
+
+def releaseSigningConfigured = releaseKeystorePropertiesFile.exists() &&
+    missingReleaseSigningProperties.isEmpty()
+
 android {
     ndkVersion rootProject.ext.ndkVersion
     buildToolsVersion rootProject.ext.buildToolsVersion
@@ -92,15 +129,29 @@ android {
             keyAlias 'androiddebugkey'
             keyPassword 'android'
         }
+        if (releaseSigningConfigured) {
+            release {
+                storeFile rootProject.file(
+                    releaseKeystoreProperties["SKILLGAMING_UPLOAD_STORE_FILE"]
+                )
+                storePassword releaseKeystoreProperties["SKILLGAMING_UPLOAD_STORE_PASSWORD"]
+                keyAlias releaseKeystoreProperties["SKILLGAMING_UPLOAD_KEY_ALIAS"]
+                keyPassword releaseKeystoreProperties["SKILLGAMING_UPLOAD_KEY_PASSWORD"]
+                storeType releaseKeystoreProperties.getProperty(
+                    "SKILLGAMING_UPLOAD_STORE_TYPE",
+                    "PKCS12"
+                )
+            }
+        }
     }
     buildTypes {
         debug {
             signingConfig signingConfigs.debug
         }
         release {
-            // Caution! In production, you need to generate your own keystore file.
-            // see https://reactnative.dev/docs/signed-apk-android.
-            signingConfig signingConfigs.debug
+            if (releaseSigningConfigured) {
+                signingConfig signingConfigs.release
+            }
             minifyEnabled enableProguardInReleaseBuilds
             proguardFiles getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro"
         }
