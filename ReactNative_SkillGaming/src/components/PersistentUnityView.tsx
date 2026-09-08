@@ -24,14 +24,43 @@ const RESUME_RETRY_MS = 600;
 
 export default class PersistentUnityView extends UnityView {
   private resumeTimer: ReturnType<typeof setTimeout> | null = null;
+  private gamePaused = false;
+
+  /** Pause for an app popup without unloading the game or losing its state. */
+  setGamePaused(paused: boolean) {
+    if (paused === this.gamePaused) {
+      return;
+    }
+    this.gamePaused = paused;
+    this.windowFocusChanged(!paused);
+    if (paused) {
+      this.pauseUnity(true);
+    } else {
+      this.resumeUnity();
+      this.scheduleResumeRetry();
+    }
+  }
 
   componentDidMount() {
     // On the very first mount the player does not exist yet and both calls are
     // no-ops natively; on a re-mount they undo the pause from the last unmount.
     this.resumeUnity();
+    this.scheduleResumeRetry();
+  }
+
+  private scheduleResumeRetry() {
+    if (this.resumeTimer !== null) {
+      clearTimeout(this.resumeTimer);
+    }
+    // Native onHostResume can queue a pause while the wallet is open. Ensure
+    // that pause cannot win if the popup closes before its callback runs.
     this.resumeTimer = setTimeout(() => {
       this.resumeTimer = null;
-      this.resumeUnity();
+      if (this.gamePaused) {
+        this.pauseUnity(true);
+      } else {
+        this.resumeUnity();
+      }
     }, RESUME_RETRY_MS);
   }
 

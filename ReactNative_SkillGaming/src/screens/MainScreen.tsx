@@ -1,19 +1,27 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { BackHandler, StatusBar, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useAuth } from '../auth/AuthContext';
+import AddMoneyModal from '../components/AddMoneyModal';
 import BottomTabBar, { type MainTab } from '../components/BottomTabBar';
+import TopBar from '../components/TopBar';
+import { useDemoWallet } from '../wallet/useDemoWallet';
 import GameScreen from './GameScreen';
 import JungleSwingScreen from './JungleSwingScreen';
 import PlayScreen from './PlayScreen';
 import ProfileScreen from './ProfileScreen';
-import styles, { catalogStyle, containerStyle } from './MainScreen.styles';
+import styles, { containerStyle } from './MainScreen.styles';
 
 type PlayRoute = 'catalog' | 'details' | 'game';
 
 export default function MainScreen() {
   const [activeTab, setActiveTab] = useState<MainTab>('Play');
   const [playRoute, setPlayRoute] = useState<PlayRoute>('catalog');
+  const [showAddMoney, setShowAddMoney] = useState(false);
+  const { user } = useAuth();
+  const wallet = useDemoWallet(user!.uid);
   const insets = useSafeAreaInsets();
+  const isInGame = activeTab === 'Play' && playRoute === 'game';
   const showCatalog = useCallback(() => setPlayRoute('catalog'), []);
   const showDetails = useCallback(() => setPlayRoute('details'), []);
 
@@ -39,23 +47,27 @@ export default function MainScreen() {
     return () => subscription.remove();
   }, [activeTab, playRoute, showCatalog]);
 
-  if (activeTab === 'Play' && playRoute === 'game') {
-    return <GameScreen onExit={showDetails} />;
-  }
-
   return (
     <View style={containerStyle(insets)}>
+      {!isInGame && (
+        <TopBar
+          balanceCents={wallet.balanceCents}
+          isLoading={wallet.isLoading}
+          loadError={wallet.loadError}
+          onAddMoney={() => setShowAddMoney(true)}
+        />
+      )}
       <View style={styles.content}>
-        {activeTab === 'Play' ? (
+        {isInGame ? (
+          <GameScreen onExit={showDetails} paused={showAddMoney} />
+        ) : activeTab === 'Play' ? (
           playRoute === 'details' ? (
             <JungleSwingScreen
               onBack={showCatalog}
               onPlay={() => setPlayRoute('game')}
             />
           ) : (
-            <View style={catalogStyle(insets.top)}>
-              <PlayScreen onOpenGame={showDetails} />
-            </View>
+            <PlayScreen onOpenGame={showDetails} />
           )
         ) : activeTab === 'Profile' ? (
           <ProfileScreen />
@@ -66,12 +78,24 @@ export default function MainScreen() {
           />
         )}
       </View>
-      <BottomTabBar
-        activeTab={activeTab}
-        onSelect={tab => {
-          setActiveTab(tab);
-          setPlayRoute('catalog');
-        }}
+      {!isInGame && (
+        <BottomTabBar
+          activeTab={activeTab}
+          onSelect={tab => {
+            setActiveTab(tab);
+            setPlayRoute('catalog');
+          }}
+        />
+      )}
+      <AddMoneyModal
+        visible={showAddMoney}
+        balanceCents={wallet.balanceCents}
+        isLoading={wallet.isLoading}
+        isAdding={wallet.isAdding}
+        loadError={wallet.loadError}
+        onClose={() => setShowAddMoney(false)}
+        onAddMoney={wallet.addMoney}
+        onRetryLoad={wallet.retryLoad}
       />
     </View>
   );

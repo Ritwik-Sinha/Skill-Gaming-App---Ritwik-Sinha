@@ -139,10 +139,6 @@ export const styles = StyleSheet.create({
   pressed: { opacity: 0.75 },
 });
 
-export function getScreenStyle(topInset: number) {
-  return [styles.screen, { paddingTop: topInset }];
-}
-
 export function getBackButtonStyle({ pressed }: PressableStateCallbackType) {
   return [styles.backButton, pressed && styles.pressed];
 }
@@ -152,11 +148,7 @@ export function getPlayButtonStyle({ pressed }: PressableStateCallbackType) {
 }
 
 export function getStepStyle(stacked: boolean, last: boolean) {
-  return [
-    styles.step,
-    stacked && styles.stackedStep,
-    last && styles.lastStep,
-  ];
+  return [styles.step, stacked && styles.stackedStep, last && styles.lastStep];
 }
 
 export function getStepImageStyle(width: number, stacked: boolean) {

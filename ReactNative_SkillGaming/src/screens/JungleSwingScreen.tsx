@@ -6,13 +6,11 @@ import {
   useWindowDimensions,
   View,
 } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import AppIcon from '../components/AppIcon';
 import JungleArtwork from '../components/JungleArtwork';
 import {
   getBackButtonStyle,
   getPlayButtonStyle,
-  getScreenStyle,
   getStepImageStyle,
   getStepStyle,
   styles,
@@ -54,12 +52,11 @@ export default function JungleSwingScreen({
   onBack,
   onPlay,
 }: JungleSwingScreenProps) {
-  const insets = useSafeAreaInsets();
   const { width, fontScale } = useWindowDimensions();
   const stackedInstructions = width < 350 || fontScale > 1.3;
 
   return (
-    <View style={getScreenStyle(insets.top)}>
+    <View style={styles.screen}>
       <View style={styles.navigation}>
         <Pressable
           onPress={onBack}
@@ -113,9 +110,7 @@ export default function JungleSwingScreen({
                 index === instructions.length - 1,
               )}
             >
-              <View
-                style={getStepImageStyle(width, stackedInstructions)}
-              >
+              <View style={getStepImageStyle(width, stackedInstructions)}>
                 <JungleArtwork variant={instruction.variant} />
               </View>
               <View style={styles.stepCopy}>
@@ -145,4 +140,3 @@ export default function JungleSwingScreen({
     </View>
   );
 }
-

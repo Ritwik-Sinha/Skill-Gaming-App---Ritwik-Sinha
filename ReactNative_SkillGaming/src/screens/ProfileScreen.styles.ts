@@ -10,6 +10,7 @@ const styles = StyleSheet.create({
     maxWidth: 680,
     alignSelf: 'center',
     paddingHorizontal: 22,
+    paddingTop: 30,
     paddingBottom: 32,
   },
   eyebrow: {
@@ -95,11 +96,6 @@ const styles = StyleSheet.create({
     marginTop: 14,
   },
 });
-
-export const contentStyle = (top: number) => [
-  styles.content,
-  { paddingTop: top + 30 },
-];
 
 export const signOutButtonStyle = (pressed: boolean, disabled: boolean) => [
   styles.signOutButton,

@@ -7,10 +7,8 @@ import {
   Text,
   View,
 } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../auth/AuthContext';
 import styles, {
-  contentStyle,
   signOutButtonStyle,
   signOutIndicatorColor,
 } from './ProfileScreen.styles';
@@ -19,7 +17,6 @@ const fallbackPhoto = require('../assets/icons/profile.png');
 
 export default function ProfileScreen() {
   const { user, signOut } = useAuth();
-  const insets = useSafeAreaInsets();
   const signingOut = useRef(false);
   const mounted = useRef(true);
   const [isSigningOut, setIsSigningOut] = useState(false);
@@ -69,7 +66,7 @@ export default function ProfileScreen() {
   return (
     <ScrollView
       style={styles.screen}
-      contentContainerStyle={contentStyle(insets.top)}
+      contentContainerStyle={styles.content}
       showsVerticalScrollIndicator={false}
       testID="profile-screen"
     >

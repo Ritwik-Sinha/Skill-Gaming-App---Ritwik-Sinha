@@ -3,6 +3,7 @@
 jest.mock('@react-native-async-storage/async-storage', () => {
   let store = {};
   return {
+    __esModule: true,
     default: {
       getItem: jest.fn(key => Promise.resolve(store[key] ?? null)),
       setItem: jest.fn((key, value) => {

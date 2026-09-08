@@ -1,5 +1,5 @@
 import React from 'react';
-import { ActivityIndicator, Text, View } from 'react-native';
+import { ActivityIndicator, Image, Text, View } from 'react-native';
 import { GoogleSigninButton } from '@react-native-google-signin/google-signin';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../auth/AuthContext';
@@ -21,6 +21,11 @@ function SignInScreen() {
     <View
       style={[styles.container, getSafeAreaStyle(insets.top, insets.bottom)]}
     >
+      <Image
+        source={require('../assets/brand/app-icon.png')}
+        style={styles.brandIcon}
+        accessibilityLabel="Skill Gaming app icon"
+      />
       <Text style={styles.title}>Skill Gaming</Text>
       <Text style={styles.subtitle}>Sign in to start playing</Text>
 

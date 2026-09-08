@@ -9,12 +9,11 @@ const styles = StyleSheet.create({
 
 export const containerStyle = (insets: EdgeInsets) => [
   styles.container,
-  { paddingLeft: insets.left, paddingRight: insets.right },
-];
-
-export const catalogStyle = (top: number) => [
-  styles.content,
-  { paddingTop: top },
+  {
+    paddingTop: insets.top,
+    paddingLeft: insets.left,
+    paddingRight: insets.right,
+  },
 ];
 
 export default styles;

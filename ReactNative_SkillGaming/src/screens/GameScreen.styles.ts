@@ -101,10 +101,7 @@ const styles = StyleSheet.create({
 export const containerStyle = (insets: EdgeInsets) => [
   styles.container,
   {
-    paddingTop: insets.top,
     paddingBottom: insets.bottom,
-    paddingLeft: insets.left,
-    paddingRight: insets.right,
   },
 ];
 

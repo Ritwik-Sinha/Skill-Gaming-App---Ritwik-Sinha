@@ -27,6 +27,7 @@ const RESET_TIMEOUT_MS = 15000;
 
 interface GameScreenProps {
   onExit: () => void;
+  paused?: boolean;
 }
 
 /**
@@ -34,7 +35,7 @@ interface GameScreenProps {
  * gameplay scene. Navigation waits for that acknowledgement before unmounting,
  * which lets PersistentUnityView pause the engine after the scene is gone.
  */
-function GameScreen({ onExit }: GameScreenProps) {
+function GameScreen({ onExit, paused = false }: GameScreenProps) {
   const insets = useSafeAreaInsets();
   const unityRef = useRef<PersistentUnityView>(null);
   const exitRequested = useRef(false);
@@ -58,6 +59,12 @@ function GameScreen({ onExit }: GameScreenProps) {
       clearResetTimer();
     };
   }, [clearResetTimer]);
+
+  useEffect(() => {
+    // Let an in-flight scene reset finish even if the wallet is opened.
+    // PersistentUnityView itself handles pausing on unmount.
+    unityRef.current?.setGamePaused(paused && resetStatus === 'idle');
+  }, [paused, resetStatus]);
 
   const sendResetRequest = useCallback(() => {
     clearResetTimer();

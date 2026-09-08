@@ -1,6 +1,7 @@
 import { StyleSheet, type ViewStyle } from 'react-native';
 
 export const styles = StyleSheet.create({
+  brandIcon: { width: 96, height: 96, borderRadius: 24, marginBottom: 22 },
   container: {
     flex: 1,
     alignItems: 'center',
