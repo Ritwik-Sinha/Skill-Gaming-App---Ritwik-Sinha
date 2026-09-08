@@ -1,32 +1,24 @@
 /**
  * Skill Gaming app entry point.
  *
- * The Unity view is auth-gated: <GameScreen /> (and therefore <UnityView />)
- * is only mounted once a Google sign-in has completed. Connection values for
- * Google OAuth live in src/config/authConfig.ts.
+ * The game lobby is auth-gated. Unity is mounted only when a signed-in player
+ * starts Jungle Swing from its game guide.
  *
  * @format
  */
 
 import React from 'react';
-import {
-  ActivityIndicator,
-  StatusBar,
-  StyleSheet,
-  useColorScheme,
-  View,
-} from 'react-native';
+import { ActivityIndicator, StatusBar, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AuthProvider, useAuth } from './src/auth/AuthContext';
 import SignInScreen from './src/screens/SignInScreen';
-import GameScreen from './src/screens/GameScreen';
+import MainScreen from './src/screens/MainScreen';
+import { loadingIndicatorColor, styles } from './App.styles';
 
 function App() {
-  const isDarkMode = useColorScheme() === 'dark';
-
   return (
     <SafeAreaProvider>
-      <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} />
+      <StatusBar barStyle="light-content" />
       <AuthProvider>
         <AppContent />
       </AuthProvider>
@@ -40,7 +32,7 @@ function AppContent() {
   if (isRestoring) {
     return (
       <View style={styles.loading}>
-        <ActivityIndicator size="large" color="#4285F4" />
+        <ActivityIndicator size="large" color={loadingIndicatorColor} />
       </View>
     );
   }
@@ -49,16 +41,7 @@ function AppContent() {
     return <SignInScreen />;
   }
 
-  return <GameScreen />;
+  return <MainScreen key={user.uid} />;
 }
-
-const styles = StyleSheet.create({
-  loading: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#101820',
-  },
-});
 
 export default App;
