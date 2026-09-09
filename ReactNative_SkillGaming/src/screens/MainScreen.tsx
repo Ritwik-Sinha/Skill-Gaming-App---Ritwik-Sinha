@@ -51,7 +51,7 @@ export default function MainScreen() {
     <View style={containerStyle(insets)}>
       {!isInGame && (
         <TopBar
-          balanceCents={wallet.balanceCents}
+          balance={wallet.balance}
           isLoading={wallet.isLoading}
           loadError={wallet.loadError}
           onAddMoney={() => setShowAddMoney(true)}
@@ -89,7 +89,7 @@ export default function MainScreen() {
       )}
       <AddMoneyModal
         visible={showAddMoney}
-        balanceCents={wallet.balanceCents}
+        balance={wallet.balance}
         isLoading={wallet.isLoading}
         isAdding={wallet.isAdding}
         loadError={wallet.loadError}

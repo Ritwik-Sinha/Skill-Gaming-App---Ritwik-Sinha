@@ -26,7 +26,7 @@ import styles, {
 
 interface AddMoneyModalProps {
   visible: boolean;
-  balanceCents: number;
+  balance: number;
   isLoading: boolean;
   isAdding: boolean;
   loadError: string | null;
@@ -37,7 +37,7 @@ interface AddMoneyModalProps {
 
 export default function AddMoneyModal({
   visible,
-  balanceCents,
+  balance,
   isLoading,
   isAdding,
   loadError,
@@ -176,7 +176,9 @@ export default function AddMoneyModal({
             <Text style={styles.title} accessibilityRole="header">
               Add money
             </Text>
-            <Text style={styles.subtitle}>Add to your demo balance.</Text>
+            <Text style={styles.subtitle}>
+              Add whole dollars to your demo balance.
+            </Text>
 
             <View style={styles.balanceRow}>
               <Text style={styles.balanceLabel}>Current balance</Text>
@@ -191,7 +193,7 @@ export default function AddMoneyModal({
                   numberOfLines={1}
                   adjustsFontSizeToFit
                 >
-                  {loadError ? '—' : formatMoney(balanceCents)}
+                  {loadError ? '—' : formatMoney(balance)}
                 </Text>
               )}
             </View>
@@ -205,16 +207,16 @@ export default function AddMoneyModal({
                   setAmount(value);
                   setError(null);
                 }}
-                placeholder="0.00"
+                placeholder="0"
                 placeholderTextColor={inputPlaceholderColor}
                 selectionColor={inputSelectionColor}
                 style={styles.input}
-                keyboardType="decimal-pad"
+                keyboardType="number-pad"
                 returnKeyType="done"
                 onSubmitEditing={handleSubmit}
                 editable={!busy && !isLoading && !loadError}
                 accessibilityLabel="Amount to add"
-                accessibilityHint="Enter the amount in dollars."
+                accessibilityHint="Enter a whole-dollar amount without decimals."
                 maxLength={12}
                 autoCorrect={false}
                 autoCapitalize="none"

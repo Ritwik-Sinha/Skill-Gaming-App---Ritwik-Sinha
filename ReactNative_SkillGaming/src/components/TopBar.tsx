@@ -5,7 +5,7 @@ import AppIcon from './AppIcon';
 import styles, { addButtonStyle, crownColor } from './TopBar.styles';
 
 interface TopBarProps {
-  balanceCents: number;
+  balance: number;
   crownCount?: number;
   crownGoal?: number;
   onAddMoney: () => void;
@@ -14,15 +14,15 @@ interface TopBarProps {
 }
 
 export default function TopBar({
-  balanceCents,
+  balance,
   crownCount = 0,
   crownGoal = 10,
   onAddMoney,
   isLoading = false,
   loadError = null,
 }: TopBarProps) {
-  let balanceLabel = `Balance ${formatMoney(balanceCents)}`;
-  let balanceText = formatMoney(balanceCents);
+  let balanceLabel = `Balance ${formatMoney(balance)}`;
+  let balanceText = formatMoney(balance);
   if (isLoading) {
     balanceLabel = 'Loading balance';
     balanceText = '…';
