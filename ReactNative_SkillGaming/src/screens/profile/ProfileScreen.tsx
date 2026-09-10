@@ -11,6 +11,7 @@ import { useAuth } from '../../auth/AuthContext';
 import WithdrawMoneyModal from '../../components/wallet/WithdrawMoneyModal';
 import { formatServerMoney } from '../../wallet/serverMoney';
 import type { useServerWallet } from '../../wallet/useServerWallet';
+import type { useServerRating } from '../../rating/useServerRating';
 import styles, {
   signOutButtonStyle,
   signOutIndicatorColor,
@@ -20,6 +21,10 @@ import styles, {
 const fallbackPhoto = require('../../assets/icons/profile.png');
 
 interface ProfileScreenProps {
+  playerRating: Pick<
+    ReturnType<typeof useServerRating>,
+    'rating' | 'isLoading' | 'loadError' | 'retryLoad'
+  >;
   wallet: Pick<
     ReturnType<typeof useServerWallet>,
     | 'balance'
@@ -33,7 +38,10 @@ interface ProfileScreenProps {
   >;
 }
 
-export default function ProfileScreen({ wallet }: ProfileScreenProps) {
+export default function ProfileScreen({
+  wallet,
+  playerRating,
+}: ProfileScreenProps) {
   const { user, signOut } = useAuth();
   const signingOut = useRef(false);
   const mounted = useRef(true);
@@ -110,23 +118,71 @@ export default function ProfileScreen({ wallet }: ProfileScreenProps) {
       <Text style={styles.subtitle}>Your place in the game.</Text>
 
       <View style={styles.profileCard}>
-        <View style={styles.avatarFrame}>
-          <Image
-            source={showPhoto ? { uri: photo } : fallbackPhoto}
-            style={showPhoto ? styles.avatar : styles.fallbackAvatar}
-            resizeMode={showPhoto ? 'cover' : 'contain'}
-            accessibilityLabel="Profile image"
-            onError={
-              showPhoto ? () => setFailedPhoto(photo ?? null) : undefined
-            }
-          />
+        <View style={styles.userSection}>
+          <View style={styles.avatarFrame}>
+            <Image
+              source={showPhoto ? { uri: photo } : fallbackPhoto}
+              style={showPhoto ? styles.avatar : styles.fallbackAvatar}
+              resizeMode={showPhoto ? 'cover' : 'contain'}
+              accessibilityLabel="Profile image"
+              onError={
+                showPhoto ? () => setFailedPhoto(photo ?? null) : undefined
+              }
+            />
+          </View>
+          <Text style={styles.fullName} selectable>
+            {fullName}
+          </Text>
+          <Text style={styles.email} selectable>
+            {user.email}
+          </Text>
         </View>
-        <Text style={styles.fullName} selectable>
-          {fullName}
-        </Text>
-        <Text style={styles.email} selectable>
-          {user.email}
-        </Text>
+
+        <View style={styles.ratingSection}>
+          <Text style={styles.ratingTitle} accessibilityRole="header">
+            Elo rating
+          </Text>
+          {playerRating.isLoading && playerRating.rating === undefined ? (
+            <ActivityIndicator
+              color={signOutIndicatorColor}
+              style={styles.ratingLoading}
+              accessibilityLabel="Loading Elo rating"
+            />
+          ) : (
+            <Text
+              style={styles.ratingValue}
+              numberOfLines={1}
+              adjustsFontSizeToFit
+              accessibilityLabel={`Elo rating: ${
+                playerRating.rating ?? 'unavailable'
+              }`}
+              accessibilityLiveRegion="polite"
+            >
+              {playerRating.rating ?? '—'}
+            </Text>
+          )}
+          <Text style={styles.ratingRules}>Win +20 · Loss −20</Text>
+          <Text style={styles.ratingDescription}>
+            Draws and entries without an opponent leave your rating unchanged.
+          </Text>
+          {playerRating.loadError && (
+            <View>
+              <Text style={styles.ratingError} accessibilityRole="alert">
+                {playerRating.rating === undefined
+                  ? playerRating.loadError
+                  : 'Showing your last saved rating. Couldn’t refresh.'}
+              </Text>
+              <Pressable
+                onPress={playerRating.retryLoad}
+                accessibilityRole="button"
+                accessibilityLabel="Retry rating"
+                style={styles.ratingRetry}
+              >
+                <Text style={styles.ratingRetryLabel}>Retry</Text>
+              </Pressable>
+            </View>
+          )}
+        </View>
       </View>
 
       <View style={styles.walletCard}>

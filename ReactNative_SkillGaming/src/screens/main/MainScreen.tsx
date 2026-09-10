@@ -8,6 +8,7 @@ import BottomTabBar, {
 } from '../../components/navigation/BottomTabBar';
 import TopBar from '../../components/navigation/TopBar';
 import { useServerWallet } from '../../wallet/useServerWallet';
+import { useServerRating } from '../../rating/useServerRating';
 import { type OwnResult } from '../../services/gameApi';
 import { recoverGame } from '../../services/gameSession';
 import GameScreen from '../play/GameScreen';
@@ -33,6 +34,12 @@ export default function MainScreen() {
   const userId = user!.uid;
   const wallet = useServerWallet(userId);
   const refreshWallet = wallet.refresh;
+  const playerRating = useServerRating(userId);
+  const refreshRating = playerRating.refresh;
+  const refreshAccount = useCallback(() => {
+    refreshWallet();
+    refreshRating();
+  }, [refreshWallet, refreshRating]);
   const insets = useSafeAreaInsets();
   const isInGame = playRoute === 'game';
   const showCatalog = useCallback(() => setPlayRoute('catalog'), []);
@@ -72,9 +79,9 @@ export default function MainScreen() {
     if (!isInGame) {
       StatusBar.setHidden(false);
       StatusBar.setBarStyle('light-content');
-      refreshWallet();
+      refreshAccount();
     }
-  }, [isInGame, summary, activeTab, refreshWallet]);
+  }, [isInGame, summary, activeTab, refreshAccount]);
 
   useEffect(() => {
     if (summary) {
@@ -161,10 +168,14 @@ export default function MainScreen() {
           <ResultsScreen
             userId={userId}
             onOpenResult={setSummary}
-            onResultsUpdated={wallet.refresh}
+            onResultsUpdated={refreshAccount}
           />
         ) : activeTab === 'Profile' ? (
-          <ProfileScreen key={userId} wallet={wallet} />
+          <ProfileScreen
+            key={userId}
+            wallet={wallet}
+            playerRating={playerRating}
+          />
         ) : (
           <View style={styles.content} testID="empty-leagues-screen" />
         )}

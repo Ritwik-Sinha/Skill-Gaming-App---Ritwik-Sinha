@@ -26,6 +26,7 @@ import { firebaseAuth } from '../services/firebase';
 import { syncUserAfterLogin, type BackendUser } from '../services/userApi';
 import { resultsDisplayCache } from '../screens/results/resultsDisplayCache';
 import { walletDisplayCache } from '../wallet/walletDisplayCache';
+import { ratingDisplayCache } from '../rating/ratingDisplayCache';
 
 /**
  * The signed-in user's profile, persisted in AsyncStorage so the name and
@@ -139,11 +140,12 @@ async function cacheUser(user: AuthUser | null): Promise<void> {
 
 async function restoreDisplayCaches(userId: string): Promise<void> {
   // Populate memory while the auth gate is already restoring the account, so
-  // the first Results/wallet render can synchronously use its saved snapshot.
+  // the first Results/wallet/rating render can use its saved snapshot.
   // These are local reads only; each screen keeps its normal server refresh.
   await Promise.all([
     resultsDisplayCache.hydrate(userId),
     walletDisplayCache.hydrate(userId),
+    ratingDisplayCache.hydrate(userId),
   ]);
 }
 
