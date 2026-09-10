@@ -1,6 +1,6 @@
 # Jungle Swing illustrations
 
-These five complete PNG illustrations are saved in the app bundle. `src/components/JungleArtwork.tsx` selects and displays a single PNG for each variant. There is no runtime drawing, vector generation, sprite layering, or compositing.
+These five complete PNG illustrations are saved in the app bundle. `src/components/game/JungleArtwork.tsx` selects and displays a single PNG for each variant. There is no runtime drawing, vector generation, sprite layering, or compositing.
 
 They were generated with the built-in `image_gen` tool on September 8, 2026 (UTC), using the existing turquoise chameleon sprite and game appearance as visual guidance. These are instructional illustrations, not captured gameplay screenshots. The original generated files were copied into this directory without editing.
 

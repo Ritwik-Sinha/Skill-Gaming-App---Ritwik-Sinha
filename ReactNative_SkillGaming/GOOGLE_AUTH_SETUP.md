@@ -1,7 +1,7 @@
 # Google Sign-In Setup
 
 Google authentication now gates the Unity view: `<UnityView />` (inside
-`src/screens/GameScreen.tsx`) is only mounted after a successful sign-in.
+`src/screens/play/GameScreen.tsx`) is only mounted after a successful sign-in.
 The app builds and runs with the placeholders in place, but the Google
 sign-in dialog will fail until you fill in real client IDs.
 
@@ -11,9 +11,9 @@ sign-in dialog will fail until you fill in real client IDs.
 | --- | --- |
 | `src/config/authConfig.ts` | **All connection values (placeholders) live here.** |
 | `src/auth/AuthContext.tsx` | `AuthProvider` / `useAuth()` — Google sign-in → Firebase Auth → `onUserLogin` Cloud Function, sign-out, session restore. Persists the user profile (uid, name, email, photo, id, idToken) to AsyncStorage under `@skillgaming/auth_user`. See `FIREBASE_BACKEND_SETUP.md`. |
-| `src/screens/SignInScreen.tsx` | Shown while signed out (Google sign-in button). |
-| `src/screens/GameScreen.tsx` | Unity view + user header; only mounted when authenticated. Signing out first posts `ResetToTitle` to the `GameRoot` object, so the parked engine is already at the title screen when the next session re-attaches it. |
-| `src/components/PersistentUnityView.tsx` | `UnityView` subclass that pauses instead of unloading on unmount. Unity 6 cannot be created twice in one Android process ("Graphics device is null" crash), so sign-out → sign-in and Metro reloads re-attach the same player. |
+| `src/screens/auth/SignInScreen.tsx` | Shown while signed out (Google sign-in button). |
+| `src/screens/play/GameScreen.tsx` | Unity view + user header; only mounted when authenticated. Signing out first posts `ResetToTitle` to the `GameRoot` object, so the parked engine is already at the title screen when the next session re-attaches it. |
+| `src/components/game/PersistentUnityView.tsx` | `UnityView` subclass that pauses instead of unloading on unmount. Unity 6 cannot be created twice in one Android process ("Graphics device is null" crash), so sign-out → sign-in and Metro reloads re-attach the same player. |
 | `src/components/UserHeader.tsx` | Displays the signed-in user's photo (or initials) and name, with sign-out. Accepts `onBeforeSignOut`, awaited before the session is cleared. |
 | `App.tsx` | Routes: restoring → spinner, signed out → `SignInScreen`, signed in → `GameScreen`. |
 

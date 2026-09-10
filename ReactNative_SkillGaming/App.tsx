@@ -11,8 +11,8 @@ import React from 'react';
 import { ActivityIndicator, StatusBar, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { AuthProvider, useAuth } from './src/auth/AuthContext';
-import SignInScreen from './src/screens/SignInScreen';
-import MainScreen from './src/screens/MainScreen';
+import SignInScreen from './src/screens/auth/SignInScreen';
+import MainScreen from './src/screens/main/MainScreen';
 import { loadingIndicatorColor, styles } from './App.styles';
 
 function App() {
