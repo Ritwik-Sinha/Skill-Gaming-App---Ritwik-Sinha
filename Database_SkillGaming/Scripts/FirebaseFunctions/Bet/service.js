@@ -1,5 +1,6 @@
 /** PostgreSQL lifecycle. Bucket locks serialize matching; wallet rows serialize money. */
 const LEASE_SECONDS = 120;
+const MATCH_WAIT_SECONDS = 15 * 60;
 const MAX_SCORE = 1000000000;
 const MAX_AMOUNT_CENTS = 100000000000;
 const MIN_BET_CENTS = 100;
@@ -49,7 +50,7 @@ function toBet(row) {
 const OWN_RESULT_SQL = `SELECT b.*, r.status AS result_status, r.settled_at,
     r.gross_pool_cents, r.match_fee_cents AS total_match_fee_cents,
     opponent.score AS opponent_score, opponent.play_status AS opponent_play_status,
-    e.outcome AS earning_outcome, e.gross_amount_cents,
+    e.outcome AS earning_outcome, e.gross_amount_cents, e.created_at AS earning_created_at,
     e.match_fee_cents AS own_match_fee_cents, e.net_amount_cents,
     (SELECT amount_cents FROM wallet_entries w WHERE w.bet_id = b.id AND w.kind IN ('payout', 'refund')) AS wallet_credit_cents
   FROM bets b LEFT JOIN results r ON r.id = b.result_id
@@ -60,6 +61,7 @@ const OWN_RESULT_SQL = `SELECT b.*, r.status AS result_status, r.settled_at,
   LEFT JOIN game_earnings e ON e.bet_id = b.id`;
 function toOwnResult(row) {
   const matchStatus = row.status === 'cancelled' ? 'cancelled' : row.result_status || 'unmatched';
+  const unmatchedClosure = matchStatus === 'cancelled' && row.result_id == null;
   let outcome = row.earning_outcome;
   if (!outcome) {
     if (matchStatus === 'cancelled') outcome = 'cancelled';
@@ -77,9 +79,9 @@ function toOwnResult(row) {
     grossAmountCents: Number(row.gross_amount_cents || 0), matchFeeCents: Number(row.own_match_fee_cents || 0),
     netAmountCents: Number(row.net_amount_cents || 0),
     walletCreditCents: Number(row.wallet_credit_cents || 0), isLegacy: row.request_id == null,
-    totalPoolCents: Number(row.gross_pool_cents || Number(row.amount_cents) * 2),
-    totalMatchFeeCents: Number(row.total_match_fee_cents || 0), matchFeePercent: 10,
-    createdAt: row.created_at, settledAt: row.settled_at || null,
+    totalPoolCents: unmatchedClosure ? 0 : Number(row.gross_pool_cents || Number(row.amount_cents) * 2),
+    totalMatchFeeCents: Number(row.total_match_fee_cents || 0), matchFeePercent: unmatchedClosure ? 0 : 10,
+    createdAt: row.created_at, settledAt: row.settled_at || row.earning_created_at || null,
   };
 }
 
@@ -137,6 +139,44 @@ function createGameService(db) {
     if (!found.rowCount) throw new GameError('not-found', 'Game attempt not found.');
     return { bet: toBet(found.rows[0]), result: toOwnResult(found.rows[0]) };
   }
+  // Caller holds the matching bucket and bet row locks. The deadline is checked
+  // against the database clock after those locks, never a client timestamp.
+  async function closeUnmatchedBet(client, bet) {
+    if (bet.status !== 'pending' || bet.result_id != null || !bet.match_expired) return false;
+    await client.query(`UPDATE bets SET status = 'cancelled', updated_at = clock_timestamp(),
+        play_status = CASE WHEN play_status = 'playing' THEN 'forfeited' ELSE play_status END,
+        finish_reason = CASE WHEN play_status = 'playing' THEN 'match_timeout' ELSE finish_reason END,
+        finished_at = CASE WHEN play_status = 'playing' THEN clock_timestamp() ELSE finished_at END,
+        lease_expires_at = NULL WHERE id = $1`, [bet.id]);
+    // Legacy attempts without a server debit must not create wallet money.
+    const refund = Number(bet.wallet_debited_cents);
+    if (refund > 0) {
+      await client.query(`INSERT INTO game_earnings
+          (match_id, bet_id, firebase_uid, outcome, gross_amount_cents, match_fee_cents, net_amount_cents)
+        VALUES (NULL, $1, $2, 'refunded', $3, 0, $3)`, [bet.id, bet.firebase_uid, refund]);
+      await changeWallet(client, bet.firebase_uid, refund, 'refund', `unmatched-refund:${bet.id}`, bet.id);
+    }
+    return true;
+  }
+  async function finalizeUnmatchedGames(uid = null, limit = 100) {
+    const candidates = await db.query(`SELECT id, game_id, amount_cents FROM bets
+        WHERE status = 'pending' AND result_id IS NULL
+          AND created_at <= now() - $2 * interval '1 second'
+          AND ($1::text IS NULL OR firebase_uid = $1)
+        ORDER BY created_at, id LIMIT $3`, [uid, MATCH_WAIT_SECONDS, limit]);
+    let closedCount = 0;
+    for (const candidate of candidates.rows) {
+      const closed = await db.transaction(async (client) => {
+        await lockBucket(client, candidate.game_id, candidate.amount_cents);
+        const found = await client.query(`SELECT *,
+            created_at <= clock_timestamp() - $2 * interval '1 second' AS match_expired
+          FROM bets WHERE id = $1 FOR UPDATE`, [candidate.id, MATCH_WAIT_SECONDS]);
+        return found.rowCount ? closeUnmatchedBet(client, found.rows[0]) : false;
+      });
+      if (closed) closedCount++;
+    }
+    return closedCount;
+  }
   async function settle(client, resultId) {
     if (!resultId) return;
     const result = await client.query('SELECT * FROM results WHERE id = $1 FOR UPDATE', [resultId]);
@@ -169,6 +209,7 @@ function createGameService(db) {
   }
 
   async function getMyWallet(uid) {
+    await finalizeUnmatchedGames(uid);
     return db.transaction(async (client) => { await ensureUser(client, uid); return toWallet(await lockWallet(client, uid)); });
   }
   async function addDemoMoney(uid, data = {}) {
@@ -224,6 +265,9 @@ function createGameService(db) {
     if (!Number.isSafeInteger(amount) || amount < MIN_BET_CENTS || amount > MAX_BET_CENTS || amount % 100 !== 0) {
       throw new GameError('invalid-argument', 'Bet amount must be a whole dollar between $1 and $20.');
     }
+    // Refund the caller's old entries before reserving funds for a new attempt.
+    // Each closure commits separately to preserve bucket -> bet -> wallet lock order.
+    await finalizeUnmatchedGames(uid);
     return db.transaction(async (client) => {
       await lockUser(client, uid);
       const previous = await client.query('SELECT * FROM bets WHERE firebase_uid = $1 AND request_id = $2', [uid, requestId]);
@@ -247,7 +291,8 @@ function createGameService(db) {
       const opponent = await client.query(`SELECT * FROM bets
           WHERE game_id = $1 AND amount_cents = $2 AND status = 'pending'
             AND firebase_uid <> $3 AND request_id IS NOT NULL
-          ORDER BY created_at, id LIMIT 1 FOR UPDATE`, [gameId, amount, uid]);
+            AND result_id IS NULL AND created_at > clock_timestamp() - $4 * interval '1 second'
+          ORDER BY created_at, id LIMIT 1 FOR UPDATE`, [gameId, amount, uid, MATCH_WAIT_SECONDS]);
       if (opponent.rowCount) {
         const other = opponent.rows[0];
         const result = await client.query(`INSERT INTO results
@@ -291,8 +336,13 @@ function createGameService(db) {
       const initial = await client.query('SELECT game_id, amount_cents FROM bets WHERE id = $1 AND firebase_uid = $2', [betId, uid]);
       if (!initial.rowCount) throw new GameError('not-found', 'Game attempt not found.');
       await lockBucket(client, initial.rows[0].game_id, initial.rows[0].amount_cents);
-      const found = await client.query('SELECT *, lease_expires_at <= clock_timestamp() AS expired FROM bets WHERE id = $1 FOR UPDATE', [betId]);
+      const found = await client.query(`SELECT *, lease_expires_at <= clock_timestamp() AS expired,
+          created_at <= clock_timestamp() - $2 * interval '1 second' AS match_expired
+        FROM bets WHERE id = $1 FOR UPDATE`, [betId, MATCH_WAIT_SECONDS]);
       const bet = found.rows[0];
+      if (await closeUnmatchedBet(client, bet)) {
+        return { ...(await ownResult(client, betId, uid)), canContinue: false };
+      }
       if (bet.play_status === 'playing') {
         const reason = bet.expired ? 'timeout' : finish ? data.reason : null;
         if (reason === 'completed' && score == null && bet.score == null) throw new GameError('failed-precondition', 'Complete the game with a score.');
@@ -320,6 +370,7 @@ function createGameService(db) {
     return expired.rowCount;
   }
   async function finalizeStaleGames() {
+    const unmatchedClosed = await finalizeUnmatchedGames();
     const expired = await finalizeExpired();
     const ready = await db.query(`SELECT r.id, r.game_id, r.bet_amount_cents FROM results r
         JOIN bets a ON a.id = r.user1_bet_id JOIN bets b ON b.id = r.user2_bet_id
@@ -328,15 +379,17 @@ function createGameService(db) {
     for (const result of ready.rows) await db.transaction(async (client) => {
       await lockBucket(client, result.game_id, result.bet_amount_cents); await settle(client, result.id);
     });
-    return { expired, settledCandidates: ready.rowCount };
+    return { unmatchedClosed, expired, settledCandidates: ready.rowCount };
   }
   async function getMyResults(uid, data = {}) {
+    await finalizeUnmatchedGames(uid);
     await finalizeExpired(uid);
     const limit = Math.min(Math.max(Number.isInteger(data.limit) ? data.limit : 50, 1), 100);
     const rows = await db.query(`${OWN_RESULT_SQL} WHERE b.firebase_uid = $1 ORDER BY b.created_at DESC, b.id DESC LIMIT $2`, [uid, limit]);
     return { results: rows.rows.map(toOwnResult) };
   }
   async function getMyBets(uid, data = {}) {
+    await finalizeUnmatchedGames(uid);
     await finalizeExpired(uid);
     const limit = Math.min(Math.max(Number.isInteger(data.limit) ? data.limit : 50, 1), 100);
     const rows = await db.query('SELECT * FROM bets WHERE firebase_uid = $1 ORDER BY created_at DESC, id DESC LIMIT $2', [uid, limit]);
@@ -344,6 +397,7 @@ function createGameService(db) {
   }
   async function getPendingBetsForGame(uid, data = {}) {
     const gameId = requireGameId(data.gameId);
+    await finalizeUnmatchedGames(uid);
     const rows = await db.query("SELECT * FROM bets WHERE firebase_uid = $1 AND game_id = $2 AND status = 'pending' ORDER BY created_at LIMIT 100", [uid, gameId]);
     return { bets: rows.rows.map(toBet) };
   }
@@ -374,7 +428,8 @@ function createGameService(db) {
   }
   return { placeBet, recoverGameReservation, checkpointGame: (uid, data) => updateAttempt(uid, data),
     finishGame: (uid, data) => updateAttempt(uid, data, true), getMyResults, getMyBets,
-    getPendingBetsForGame, getMyLeaderboard, finalizeStaleGames, getMyWallet, addDemoMoney, withdrawMoney };
+    getPendingBetsForGame, getMyLeaderboard, finalizeStaleGames, finalizeUnmatchedGames,
+    getMyWallet, addDemoMoney, withdrawMoney };
 }
-module.exports = { createGameService, calculateSettlement, GameError, LEASE_SECONDS,
+module.exports = { createGameService, calculateSettlement, GameError, LEASE_SECONDS, MATCH_WAIT_SECONDS,
   requireScore, requireId, requireGameId, toOwnResult };

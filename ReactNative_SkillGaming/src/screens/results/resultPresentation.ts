@@ -45,7 +45,9 @@ function outcomePresentation(result: OwnResult) {
       return {
         title: 'Entry refunded',
         description:
-          result.playStatus === 'forfeited' && result.matchId !== null
+          result.matchStatus === 'cancelled' && result.matchId === null
+            ? 'No opponent matched within 15 minutes. This run is closed and your full entry amount was refunded with no match fee.'
+            : result.playStatus === 'forfeited' && result.matchId !== null
             ? 'Both runs were forfeited. Both entries were refunded with no match fee.'
             : 'Your entry amount has been returned with no match fee. This run is closed.',
         color: resultGreen,

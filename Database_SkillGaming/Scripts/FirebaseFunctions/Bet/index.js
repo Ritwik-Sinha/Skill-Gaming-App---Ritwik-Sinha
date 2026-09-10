@@ -32,5 +32,10 @@ for (const name of ['placeBet', 'recoverGameReservation', 'checkpointGame', 'fin
 
 // A killed app cannot send a forfeit. Checkpoints renew a two-minute server lease;
 // expiry preserves the last accepted score and permanently forfeits the attempt.
-exports.finalizeStaleGames = functions.region(REGION).pubsub
-  .schedule('every 1 minutes').onRun(() => service.finalizeStaleGames());
+// Also closes unmatched bets after 15 minutes and refunds the full entry, fee-free.
+exports.finalizeStaleGames = functions.region(REGION).runWith({ timeoutSeconds: 300 }).pubsub
+  .schedule('every 1 minutes').onRun(async () => {
+    const result = await service.finalizeStaleGames();
+    console.info('[finalizeStaleGames]', result);
+    return result;
+  });
