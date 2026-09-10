@@ -11,6 +11,7 @@ interface TopBarProps {
   onAddMoney: () => void;
   isLoading?: boolean;
   loadError?: string | null;
+  hasBalance?: boolean;
 }
 
 export default function TopBar({
@@ -20,13 +21,14 @@ export default function TopBar({
   onAddMoney,
   isLoading = false,
   loadError = null,
+  hasBalance = !isLoading && !loadError,
 }: TopBarProps) {
   let balanceLabel = `Balance ${formatMoney(balance)}`;
   let balanceText = formatMoney(balance);
-  if (isLoading) {
+  if (isLoading && !hasBalance) {
     balanceLabel = 'Loading balance';
     balanceText = '…';
-  } else if (loadError) {
+  } else if (!hasBalance) {
     balanceLabel = 'Balance unavailable';
     balanceText = '—';
   }

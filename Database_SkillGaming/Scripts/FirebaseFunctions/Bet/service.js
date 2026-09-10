@@ -37,14 +37,16 @@ function requireScore(value, optional = true) {
   return value;
 }
 const nullableNumber = (value) => value == null ? null : Number(value);
+// Callable encoding traverses Date objects as {}, so serialize database timestamps first.
+const toTimestamp = (value) => value instanceof Date ? value.toISOString() : value ?? null;
 const toWallet = (row) => ({ balanceCents: Number(row.balance_cents), currency: 'USD', mode: 'demo' });
 function toBet(row) {
   return {
     id: String(row.id), gameId: row.game_id, amountCents: Number(row.amount_cents),
     status: row.status, playStatus: row.play_status, score: nullableNumber(row.score),
     resultId: row.result_id == null ? null : String(row.result_id),
-    startedAt: row.started_at, finishedAt: row.finished_at, leaseExpiresAt: row.lease_expires_at,
-    finishReason: row.finish_reason, createdAt: row.created_at, updatedAt: row.updated_at, matchedAt: row.matched_at,
+    startedAt: toTimestamp(row.started_at), finishedAt: toTimestamp(row.finished_at), leaseExpiresAt: toTimestamp(row.lease_expires_at),
+    finishReason: row.finish_reason, createdAt: toTimestamp(row.created_at), updatedAt: toTimestamp(row.updated_at), matchedAt: toTimestamp(row.matched_at),
   };
 }
 const OWN_RESULT_SQL = `SELECT b.*, r.status AS result_status, r.settled_at,
@@ -81,7 +83,7 @@ function toOwnResult(row) {
     walletCreditCents: Number(row.wallet_credit_cents || 0), isLegacy: row.request_id == null,
     totalPoolCents: unmatchedClosure ? 0 : Number(row.gross_pool_cents || Number(row.amount_cents) * 2),
     totalMatchFeeCents: Number(row.total_match_fee_cents || 0), matchFeePercent: unmatchedClosure ? 0 : 10,
-    createdAt: row.created_at, settledAt: row.settled_at || row.earning_created_at || null,
+    createdAt: toTimestamp(row.created_at), settledAt: toTimestamp(row.settled_at || row.earning_created_at),
   };
 }
 

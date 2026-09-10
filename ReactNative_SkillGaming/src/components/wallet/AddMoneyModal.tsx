@@ -27,6 +27,7 @@ import styles, {
 interface AddMoneyModalProps {
   visible: boolean;
   balance: number;
+  hasBalance?: boolean;
   isLoading: boolean;
   isAdding: boolean;
   loadError: string | null;
@@ -41,6 +42,7 @@ export default function AddMoneyModal({
   isLoading,
   isAdding,
   loadError,
+  hasBalance = !isLoading && !loadError,
   onClose,
   onAddMoney,
   onRetryLoad,
@@ -185,7 +187,7 @@ export default function AddMoneyModal({
 
             <View style={styles.balanceRow}>
               <Text style={styles.balanceLabel}>Current balance</Text>
-              {isLoading ? (
+              {isLoading && !hasBalance ? (
                 <ActivityIndicator
                   color={inputSelectionColor}
                   accessibilityLabel="Loading balance"
@@ -196,7 +198,7 @@ export default function AddMoneyModal({
                   numberOfLines={1}
                   adjustsFontSizeToFit
                 >
-                  {loadError ? '—' : formatMoney(balance)}
+                  {hasBalance ? formatMoney(balance) : '—'}
                 </Text>
               )}
             </View>

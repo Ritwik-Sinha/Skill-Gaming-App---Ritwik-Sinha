@@ -24,6 +24,8 @@ import {
 import { GOOGLE_AUTH_CONFIG } from '../config/authConfig';
 import { firebaseAuth } from '../services/firebase';
 import { syncUserAfterLogin, type BackendUser } from '../services/userApi';
+import { resultsDisplayCache } from '../screens/results/resultsDisplayCache';
+import { walletDisplayCache } from '../wallet/walletDisplayCache';
 
 /**
  * The signed-in user's profile, persisted in AsyncStorage so the name and
@@ -135,6 +137,16 @@ async function cacheUser(user: AuthUser | null): Promise<void> {
   }
 }
 
+async function restoreDisplayCaches(userId: string): Promise<void> {
+  // Populate memory while the auth gate is already restoring the account, so
+  // the first Results/wallet render can synchronously use its saved snapshot.
+  // These are local reads only; each screen keeps its normal server refresh.
+  await Promise.all([
+    resultsDisplayCache.hydrate(userId),
+    walletDisplayCache.hydrate(userId),
+  ]);
+}
+
 function describeSignInError(e: unknown): string {
   if (isErrorWithCode(e)) {
     const code = String(e.code);
@@ -168,6 +180,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Firebase delivers auth events asynchronously, so this covers a listener
   // callback that lands after signIn() has finished.
   const syncedUid = useRef<string | null>(null);
+  const sessionVersion = useRef(0);
 
   useEffect(() => {
     GoogleSignin.configure({
@@ -180,6 +193,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Firebase restores its own session from AsyncStorage and reports it here:
     // once on launch (user or null) and after every sign-in / sign-out.
     const unsubscribe = onAuthStateChanged(firebaseAuth, async fbUser => {
+      const version = ++sessionVersion.current;
       if (!fbUser) {
         syncedUid.current = null;
         setUser(null);
@@ -191,9 +205,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return; // signIn() populates state itself once the backend confirms.
       }
 
-      // Restored session: show the cached Google profile immediately, then
-      // refresh both it and the backend row in the background.
-      const cached = await readCachedUser();
+      // Restore this account's local display data before revealing its screens,
+      // then refresh the Google profile and backend row in the background.
+      setIsRestoring(true);
+      const [cached] = await Promise.all([
+        readCachedUser(),
+        restoreDisplayCaches(fbUser.uid),
+      ]);
+      if (version !== sessionVersion.current) return;
       const restored =
         cached && cached.uid === fbUser.uid ? cached : fromFirebaseUser(fbUser);
       setUser(restored);
@@ -202,6 +221,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       GoogleSignin.signInSilently()
         .then(async response => {
           if (response.type === 'success') {
+            if (version !== sessionVersion.current) return;
             const refreshed = toAuthUser(response.data, fbUser.uid);
             setUser(refreshed);
             await cacheUser(refreshed);
@@ -212,13 +232,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         });
 
       syncUserAfterLogin()
-        .then(setProfile)
+        .then(nextProfile => {
+          if (version === sessionVersion.current) setProfile(nextProfile);
+        })
         .catch(e => {
           console.warn('[auth] onUserLogin failed while restoring session:', e);
         });
     });
 
-    return unsubscribe;
+    return () => {
+      sessionVersion.current += 1;
+      unsubscribe();
+    };
   }, []);
 
   const signIn = useCallback(async () => {
@@ -237,7 +262,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const { idToken } = response.data;
       if (!idToken) {
         setError(
-          'Google returned no ID token. Check webClientId in src/config/authConfig.ts.'
+          'Google returned no ID token. Check webClientId in src/config/authConfig.ts.',
         );
         return;
       }
@@ -247,7 +272,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const credential = GoogleAuthProvider.credential(idToken);
       const { user: fbUser } = await signInWithCredential(
         firebaseAuth,
-        credential
+        credential,
       );
 
       // 2. Register the login with the backend. If that fails we roll the
@@ -266,13 +291,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setError(
           `Signed in with Google, but the game server request failed (${
             typeof code === 'string' ? code : 'unknown error'
-          }). Please try again.`
+          }). Please try again.`,
         );
         return;
       }
 
       const signedIn = toAuthUser(response.data, fbUser.uid);
-      await cacheUser(signedIn);
+      await Promise.all([
+        cacheUser(signedIn),
+        restoreDisplayCaches(fbUser.uid),
+      ]);
       syncedUid.current = fbUser.uid;
       setProfile(backendUser);
       setUser(signedIn);
@@ -285,6 +313,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const signOut = useCallback(async () => {
+    sessionVersion.current += 1;
     // Each step is best-effort: whatever happens, the local session is cleared.
     await GoogleSignin.signOut().catch(() => {});
     await firebaseSignOut(firebaseAuth).catch(() => {});
@@ -296,7 +325,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const value = useMemo(
     () => ({ user, profile, isRestoring, isSigningIn, error, signIn, signOut }),
-    [user, profile, isRestoring, isSigningIn, error, signIn, signOut]
+    [user, profile, isRestoring, isSigningIn, error, signIn, signOut],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

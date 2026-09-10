@@ -118,12 +118,15 @@ export async function finishGame(request: FinishRequest, expectedUid?: string) {
   );
   return (await call(request)).data;
 }
-export async function getMyResults(): Promise<OwnResult[]> {
+export async function getMyResults(expectedUid?: string): Promise<OwnResult[]> {
+  assertAccount(expectedUid);
   const call = httpsCallable<{ limit: number }, { results: OwnResult[] }>(
     firebaseFunctions,
     'getMyResults',
   );
-  return (await call({ limit: 100 })).data.results;
+  const response = await call({ limit: 100 });
+  assertAccount(expectedUid);
+  return response.data.results;
 }
 export async function getMyLeaderboard(
   gameId: string,

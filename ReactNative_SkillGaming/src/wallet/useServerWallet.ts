@@ -13,6 +13,7 @@ import {
   parseServerAmount,
   parseWithdrawalAmount,
 } from './serverMoney';
+import { walletDisplayCache } from './walletDisplayCache';
 
 export { formatServerMoney } from './serverMoney';
 
@@ -48,7 +49,7 @@ const operations = {
 };
 
 // Share in-flight work across remounts, with one mutation per account.
-// Balances are always fetched from the server and are never stored locally.
+// Every load still fetches the server; the separate cache only seeds the UI.
 const pendingChanges = new Map<
   string,
   { kind: WalletOperation; promise: Promise<ServerWallet> }
@@ -199,6 +200,7 @@ function loadWallet(userId: string): Promise<ServerWallet> {
 interface WalletState {
   userId: string;
   balance: number;
+  hasBalance: boolean;
   isLoading: boolean;
   isAdding: boolean;
   isWithdrawing: boolean;
@@ -210,14 +212,22 @@ interface WalletSession extends WalletState {
 }
 
 function initialState(userId: string): WalletState {
+  const savedBalance = walletDisplayCache.peek(userId);
   return {
     userId,
-    balance: 0,
+    balance: savedBalance === undefined ? 0 : savedBalance / 100,
+    hasBalance: savedBalance !== undefined,
     isLoading: true,
     isAdding: false,
     isWithdrawing: false,
     loadError: null,
   };
+}
+
+function acceptWallet(session: WalletSession, wallet: ServerWallet) {
+  session.balance = wallet.balanceCents / 100;
+  session.hasBalance = true;
+  walletDisplayCache.save(session.userId, wallet.balanceCents);
 }
 
 export function useServerWallet(userId: string) {
@@ -228,6 +238,7 @@ export function useServerWallet(userId: string) {
       setState({
         userId: session.userId,
         balance: session.balance,
+        hasBalance: session.hasBalance,
         isLoading: session.isLoading,
         isAdding: session.isAdding,
         isWithdrawing: session.isWithdrawing,
@@ -245,8 +256,7 @@ export function useServerWallet(userId: string) {
       const promise = Promise.resolve().then(async () => {
         try {
           if (!session.userId) throw new Error('Missing account');
-          session.balance =
-            (await loadWallet(session.userId)).balanceCents / 100;
+          acceptWallet(session, await loadWallet(session.userId));
         } catch {
           session.loadError = LOAD_ERROR;
         } finally {
@@ -264,11 +274,18 @@ export function useServerWallet(userId: string) {
   useEffect(() => {
     const session: WalletSession = { ...initialState(userId), active: true };
     sessionRef.current = session;
+    walletDisplayCache.hydrate(userId).then(balanceCents => {
+      if (!session.hasBalance && balanceCents !== undefined) {
+        session.balance = balanceCents / 100;
+        session.hasBalance = true;
+        publish(session);
+      }
+    });
     load(session);
     return () => {
       session.active = false;
     };
-  }, [load, userId]);
+  }, [load, publish, userId]);
 
   const refresh = useCallback(async () => {
     const session = sessionRef.current;
@@ -305,8 +322,7 @@ export function useServerWallet(userId: string) {
       session.isAdding = true;
       publish(session);
       try {
-        session.balance =
-          (await submitChange(userId, 'topUp', amountCents)).balanceCents / 100;
+        acceptWallet(session, await submitChange(userId, 'topUp', amountCents));
       } finally {
         session.isAdding = false;
         publish(session);
@@ -338,9 +354,10 @@ export function useServerWallet(userId: string) {
       session.isWithdrawing = true;
       publish(session);
       try {
-        session.balance =
-          (await submitChange(userId, 'withdrawal', amountCents)).balanceCents /
-          100;
+        acceptWallet(
+          session,
+          await submitChange(userId, 'withdrawal', amountCents),
+        );
       } finally {
         session.isWithdrawing = false;
         publish(session);
@@ -352,6 +369,7 @@ export function useServerWallet(userId: string) {
   const visibleState = state.userId === userId ? state : initialState(userId);
   return {
     balance: visibleState.balance,
+    hasBalance: visibleState.hasBalance,
     isLoading: visibleState.isLoading,
     isAdding: visibleState.isAdding,
     isWithdrawing: visibleState.isWithdrawing,

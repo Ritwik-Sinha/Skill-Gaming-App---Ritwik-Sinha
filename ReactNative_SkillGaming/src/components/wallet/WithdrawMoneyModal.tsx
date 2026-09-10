@@ -27,6 +27,7 @@ import styles, {
 interface WithdrawMoneyModalProps {
   visible: boolean;
   balance: number;
+  hasBalance?: boolean;
   isLoading: boolean;
   isWithdrawing: boolean;
   isAdding?: boolean;
@@ -43,6 +44,7 @@ export default function WithdrawMoneyModal({
   isWithdrawing,
   isAdding = false,
   loadError,
+  hasBalance = !isLoading && !loadError,
   onClose,
   onWithdrawMoney,
   onRetryLoad,
@@ -187,7 +189,7 @@ export default function WithdrawMoneyModal({
 
             <View style={styles.balanceRow}>
               <Text style={styles.balanceLabel}>Available balance</Text>
-              {isLoading ? (
+              {isLoading && !hasBalance ? (
                 <ActivityIndicator
                   color={inputSelectionColor}
                   accessibilityLabel="Loading balance"
@@ -198,7 +200,7 @@ export default function WithdrawMoneyModal({
                   numberOfLines={1}
                   adjustsFontSizeToFit
                 >
-                  {loadError ? '—' : formatMoney(balance)}
+                  {hasBalance ? formatMoney(balance) : '—'}
                 </Text>
               )}
             </View>

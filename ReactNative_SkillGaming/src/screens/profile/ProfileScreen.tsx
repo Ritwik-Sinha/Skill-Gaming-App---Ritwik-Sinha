@@ -23,6 +23,7 @@ interface ProfileScreenProps {
   wallet: Pick<
     ReturnType<typeof useServerWallet>,
     | 'balance'
+    | 'hasBalance'
     | 'isLoading'
     | 'isAdding'
     | 'isWithdrawing'
@@ -136,7 +137,7 @@ export default function ProfileScreen({ wallet }: ProfileScreenProps) {
           Withdraw demo credits, including dollars and cents.
         </Text>
         <Text style={styles.balanceLabel}>Available demo balance</Text>
-        {wallet.isLoading ? (
+        {wallet.isLoading && !wallet.hasBalance ? (
           <ActivityIndicator
             color={signOutIndicatorColor}
             style={styles.balanceLoading}
@@ -148,7 +149,7 @@ export default function ProfileScreen({ wallet }: ProfileScreenProps) {
             numberOfLines={1}
             adjustsFontSizeToFit
           >
-            {wallet.loadError ? '—' : formatServerMoney(wallet.balance)}
+            {wallet.hasBalance ? formatServerMoney(wallet.balance) : '—'}
           </Text>
         )}
         <Pressable
@@ -201,6 +202,7 @@ export default function ProfileScreen({ wallet }: ProfileScreenProps) {
       <WithdrawMoneyModal
         visible={showWithdraw}
         balance={wallet.balance}
+        hasBalance={wallet.hasBalance}
         isLoading={wallet.isLoading}
         isAdding={wallet.isAdding}
         isWithdrawing={wallet.isWithdrawing}

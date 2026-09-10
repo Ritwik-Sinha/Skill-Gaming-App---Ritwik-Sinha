@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Pressable,
@@ -20,8 +20,10 @@ import {
 import styles from './ResultsScreen.styles';
 import useLiveGameData from './useLiveGameData';
 import MatchScoreComparison from './MatchScoreComparison';
+import { resultsDisplayCache } from './resultsDisplayCache';
 
 interface ResultsScreenProps {
+  userId: string;
   onOpenResult: (result: OwnResult) => void;
   highlightBetId?: string;
   onResultsUpdated?: () => void;
@@ -142,14 +144,20 @@ function ResultCard({
 }
 
 export default function ResultsScreen({
+  userId,
   onOpenResult,
   highlightBetId,
   onResultsUpdated,
 }: ResultsScreenProps) {
-  const { data, loading, error, refresh } = useLiveGameData(getMyResults);
+  const loadResults = useCallback(() => getMyResults(userId), [userId]);
+  const { data, loading, error, refresh, fetchCount } = useLiveGameData(
+    loadResults,
+    resultsDisplayCache,
+    userId,
+  );
   useEffect(() => {
-    if (data !== null) onResultsUpdated?.();
-  }, [data, onResultsUpdated]);
+    if (fetchCount > 0) onResultsUpdated?.();
+  }, [fetchCount, onResultsUpdated]);
   const [filter, setFilter] = useState<'All' | 'Waiting' | 'Finished'>('All');
   const results = (data ?? []).filter(
     result =>

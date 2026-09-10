@@ -105,6 +105,7 @@ export default function MainScreen() {
       {!isInGame && !summary && (
         <TopBar
           balance={wallet.balance}
+          hasBalance={wallet.hasBalance}
           isLoading={wallet.isLoading}
           loadError={wallet.loadError}
           onAddMoney={() => setShowAddMoney(true)}
@@ -158,6 +159,7 @@ export default function MainScreen() {
           )
         ) : activeTab === 'Results' ? (
           <ResultsScreen
+            userId={userId}
             onOpenResult={setSummary}
             onResultsUpdated={wallet.refresh}
           />
@@ -179,6 +181,7 @@ export default function MainScreen() {
       <AddMoneyModal
         visible={showAddMoney && !isInGame && !summary}
         balance={wallet.balance}
+        hasBalance={wallet.hasBalance}
         isLoading={wallet.isLoading || wallet.isWithdrawing}
         isAdding={wallet.isAdding}
         loadError={wallet.loadError}
