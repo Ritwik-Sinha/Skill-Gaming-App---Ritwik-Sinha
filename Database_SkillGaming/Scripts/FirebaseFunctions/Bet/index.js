@@ -26,7 +26,7 @@ function callable(name) {
 }
 
 for (const name of ['placeBet', 'recoverGameReservation', 'checkpointGame', 'finishGame', 'getMyBets',
-  'getPendingBetsForGame', 'getMyResults', 'getMyLeaderboard', 'getMyWallet', 'addDemoMoney']) {
+  'getPendingBetsForGame', 'getMyResults', 'getMyLeaderboard', 'getMyWallet', 'addDemoMoney', 'withdrawMoney']) {
   exports[name] = callable(name);
 }
 

@@ -192,6 +192,30 @@ function createGameService(db) {
       return changeWallet(client, uid, amount, 'demo_credit', `demo:${requestId}`);
     });
   }
+  async function withdrawMoney(uid, data = {}) {
+    const requestId = requireRequestId(data.requestId);
+    const amount = data.amountCents;
+    if (!Number.isSafeInteger(amount) || amount <= 0) {
+      throw new GameError('invalid-argument', 'Withdrawal amount must be a positive whole number of cents (at least $0.01).');
+    }
+    return db.transaction(async (client) => {
+      await lockUser(client, uid);
+      await ensureUser(client, uid);
+      const wallet = await lockWallet(client, uid);
+      const previous = await client.query('SELECT amount_cents FROM wallet_entries WHERE firebase_uid = $1 AND idempotency_key = $2', [uid, `withdrawal:${requestId}`]);
+      // Recover a confirmed debit before checking funds: a lost-response retry may
+      // now exceed the remaining balance, but must still return its receipt.
+      if (previous.rowCount) {
+        if (Number(previous.rows[0].amount_cents) !== -amount) throw new GameError('already-exists', 'requestId has already been used for a different withdrawal.');
+        return toWallet(wallet);
+      }
+      if (BigInt(wallet.balance_cents) < BigInt(amount)) {
+        throw new GameError('failed-precondition', 'Insufficient demo balance for this withdrawal.');
+      }
+      // Demo credits are removed from the server wallet. No cash payout is made.
+      return changeWallet(client, uid, -amount, 'demo_withdrawal', `withdrawal:${requestId}`);
+    });
+  }
   async function placeBet(uid, data = {}) {
     const gameId = requireGameId(data.gameId);
     if (!SUPPORTED_GAME_IDS.has(gameId)) throw new GameError('invalid-argument', 'This game is not available for new matches.');
@@ -350,7 +374,7 @@ function createGameService(db) {
   }
   return { placeBet, recoverGameReservation, checkpointGame: (uid, data) => updateAttempt(uid, data),
     finishGame: (uid, data) => updateAttempt(uid, data, true), getMyResults, getMyBets,
-    getPendingBetsForGame, getMyLeaderboard, finalizeStaleGames, getMyWallet, addDemoMoney };
+    getPendingBetsForGame, getMyLeaderboard, finalizeStaleGames, getMyWallet, addDemoMoney, withdrawMoney };
 }
 module.exports = { createGameService, calculateSettlement, GameError, LEASE_SECONDS,
   requireScore, requireId, requireGameId, toOwnResult };
