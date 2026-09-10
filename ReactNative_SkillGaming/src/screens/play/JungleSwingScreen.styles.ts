@@ -3,6 +3,22 @@ import { colors } from '../../theme';
 
 export const styles = StyleSheet.create({
   screen: { flex: 1 },
+  scrollArea: { flex: 1 },
+  scrollTrack: {
+    position: 'absolute',
+    top: 8,
+    bottom: 8,
+    right: 6,
+    width: 2,
+    borderRadius: 2,
+    backgroundColor: '#323432',
+    overflow: 'hidden',
+  },
+  scrollThumb: {
+    width: 2,
+    borderRadius: 2,
+    backgroundColor: '#606061',
+  },
   navigation: {
     flexDirection: 'row',
     alignItems: 'center',

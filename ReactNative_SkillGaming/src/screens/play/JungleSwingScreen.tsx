@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import {
+  Animated,
   Pressable,
-  ScrollView,
   Text,
   useWindowDimensions,
   View,
@@ -56,8 +56,25 @@ export default function JungleSwingScreen({
   disabled = false,
 }: JungleSwingScreenProps) {
   const [showBetSelection, setShowBetSelection] = useState(false);
+  const [viewportHeight, setViewportHeight] = useState(0);
+  const [contentHeight, setContentHeight] = useState(0);
+  const scrollOffset = useRef(new Animated.Value(0)).current;
   const { width, fontScale } = useWindowDimensions();
   const stackedInstructions = width < 350 || fontScale > 1.3;
+  const canScroll = viewportHeight > 0 && contentHeight > viewportHeight + 1;
+  const trackHeight = Math.max(0, viewportHeight - 16);
+  const thumbHeight =
+    contentHeight > 0
+      ? Math.min(
+          trackHeight,
+          Math.max(32, (trackHeight * viewportHeight) / contentHeight),
+        )
+      : 0;
+  const thumbOffset = scrollOffset.interpolate({
+    inputRange: [0, Math.max(1, contentHeight - viewportHeight)],
+    outputRange: [0, Math.max(0, trackHeight - thumbHeight)],
+    extrapolate: 'clamp',
+  });
 
   return (
     <View style={styles.screen}>
@@ -73,61 +90,90 @@ export default function JungleSwingScreen({
         <Text style={styles.navigationTitle}>Jungle Swing</Text>
       </View>
 
-      <ScrollView
-        contentContainerStyle={styles.content}
-        showsVerticalScrollIndicator={false}
+      <View
+        style={styles.scrollArea}
+        onLayout={event => setViewportHeight(event.nativeEvent.layout.height)}
       >
-        <View style={styles.hero}>
-          <JungleArtwork variant="hero" />
-        </View>
+        <Animated.ScrollView
+          contentContainerStyle={styles.content}
+          showsVerticalScrollIndicator={false}
+          onContentSizeChange={(_width, height) => setContentHeight(height)}
+          onScroll={Animated.event(
+            [{ nativeEvent: { contentOffset: { y: scrollOffset } } }],
+            { useNativeDriver: true },
+          )}
+          scrollEventThrottle={16}
+        >
+          <View style={styles.hero}>
+            <JungleArtwork variant="hero" />
+          </View>
 
-        <View style={styles.description}>
-          <Text style={styles.title} accessibilityRole="header">
-            Small chameleon. Big adventure.
-          </Text>
-          <Text style={styles.body}>
-            Swing through a lush jungle, leap across the river and stay one step
-            ahead of a hungry snake. Find your timing and see how far you can
-            go.
-          </Text>
-          <View style={styles.tags}>
-            {['One-touch controls', 'Endless adventure'].map(tag => (
-              <View key={tag} style={styles.tag}>
-                <Text style={styles.tagText}>{tag}</Text>
+          <View style={styles.description}>
+            <Text style={styles.title} accessibilityRole="header">
+              Small chameleon. Big adventure.
+            </Text>
+            <Text style={styles.body}>
+              Swing through a lush jungle, leap across the river and stay one
+              step ahead of a hungry snake. Find your timing and see how far you
+              can go.
+            </Text>
+            <View style={styles.tags}>
+              {['One-touch controls', 'Endless adventure'].map(tag => (
+                <View key={tag} style={styles.tag}>
+                  <Text style={styles.tagText}>{tag}</Text>
+                </View>
+              ))}
+            </View>
+          </View>
+
+          <View style={styles.instructions}>
+            <View style={styles.instructionsHeading}>
+              <Text style={styles.sectionTitle} accessibilityRole="header">
+                How to play
+              </Text>
+              <Text style={styles.stepCount}>FOUR SIMPLE STEPS</Text>
+            </View>
+            {instructions.map((instruction, index) => (
+              <View
+                key={instruction.variant}
+                style={getStepStyle(
+                  stackedInstructions,
+                  index === instructions.length - 1,
+                )}
+              >
+                <View style={getStepImageStyle(width, stackedInstructions)}>
+                  <JungleArtwork variant={instruction.variant} />
+                </View>
+                <View style={styles.stepCopy}>
+                  <Text style={styles.stepNumber}>0{index + 1}</Text>
+                  <Text style={styles.stepTitle}>{instruction.title}</Text>
+                  <Text style={styles.stepDescription}>
+                    {instruction.description}
+                  </Text>
+                </View>
               </View>
             ))}
           </View>
-        </View>
-
-        <View style={styles.instructions}>
-          <View style={styles.instructionsHeading}>
-            <Text style={styles.sectionTitle} accessibilityRole="header">
-              How to play
-            </Text>
-            <Text style={styles.stepCount}>FOUR SIMPLE STEPS</Text>
+        </Animated.ScrollView>
+        {canScroll && (
+          <View
+            style={styles.scrollTrack}
+            pointerEvents="none"
+            accessible={false}
+            importantForAccessibility="no-hide-descendants"
+          >
+            <Animated.View
+              style={[
+                styles.scrollThumb,
+                {
+                  height: thumbHeight,
+                  transform: [{ translateY: thumbOffset }],
+                },
+              ]}
+            />
           </View>
-          {instructions.map((instruction, index) => (
-            <View
-              key={instruction.variant}
-              style={getStepStyle(
-                stackedInstructions,
-                index === instructions.length - 1,
-              )}
-            >
-              <View style={getStepImageStyle(width, stackedInstructions)}>
-                <JungleArtwork variant={instruction.variant} />
-              </View>
-              <View style={styles.stepCopy}>
-                <Text style={styles.stepNumber}>0{index + 1}</Text>
-                <Text style={styles.stepTitle}>{instruction.title}</Text>
-                <Text style={styles.stepDescription}>
-                  {instruction.description}
-                </Text>
-              </View>
-            </View>
-          ))}
-        </View>
-      </ScrollView>
+        )}
+      </View>
 
       <View style={styles.playFooter}>
         <Pressable
