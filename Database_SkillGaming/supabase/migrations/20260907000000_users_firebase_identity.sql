@@ -17,7 +17,7 @@ CREATE TABLE IF NOT EXISTS public.users (
   login_count   integer     NOT NULL DEFAULT 0,
   created_at    timestamptz NOT NULL DEFAULT now(),
   updated_at    timestamptz NOT NULL DEFAULT now(),
-  last_login_at timestamptz,
+  last_login_at timestamptz
 );
 
 -- Same columns again, for a users table that pre-dates this migration.

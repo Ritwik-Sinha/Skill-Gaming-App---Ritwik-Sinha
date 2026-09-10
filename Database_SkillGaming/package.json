@@ -7,6 +7,8 @@
     "node": "20"
   },
   "scripts": {
+    "test": "node --test test/game-lifecycle.test.js",
+    "test:integration": "node --test test/game-lifecycle.integration.test.js",
     "serve": "firebase emulators:start --only functions",
     "shell": "firebase functions:shell",
     "deploy": "firebase deploy --only functions",
