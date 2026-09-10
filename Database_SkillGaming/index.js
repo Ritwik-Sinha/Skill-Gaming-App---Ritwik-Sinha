@@ -4,4 +4,5 @@ module.exports = {
   ...require('./Scripts/FirebaseFunctions/Test'),
   ...require('./Scripts/FirebaseFunctions/Auth'),
   ...require('./Scripts/FirebaseFunctions/Bet'),
+  ...require('./Scripts/FirebaseFunctions/League'),
 };
