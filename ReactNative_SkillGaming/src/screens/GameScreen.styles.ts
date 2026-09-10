@@ -49,6 +49,12 @@ const styles = StyleSheet.create({
   gameContainer: {
     flex: 1,
   },
+  forfeitNotice: {
+    color: '#ABABB3',
+    fontSize: 11,
+    textAlign: 'center',
+    padding: 8,
+  },
   unity: {
     flex: 1,
   },

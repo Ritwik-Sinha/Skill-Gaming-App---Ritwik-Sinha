@@ -13,7 +13,7 @@ import {
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { formatMoney } from '../wallet/useDemoWallet';
+import { formatServerMoney as formatMoney } from '../wallet/serverMoney';
 import styles, {
   addButtonStyle,
   closeButtonStyle,
@@ -131,7 +131,10 @@ export default function AddMoneyModal({
     >
       <KeyboardAvoidingView
         style={styles.overlay}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        // Android's native Modal already resizes for the keyboard. Applying a
+        // second height adjustment here makes the sheet repeatedly relayout.
+        enabled={Platform.OS === 'ios'}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
         <Pressable
           style={styles.backdrop}

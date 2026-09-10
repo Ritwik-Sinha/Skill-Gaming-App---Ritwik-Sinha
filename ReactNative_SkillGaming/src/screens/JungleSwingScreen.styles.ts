@@ -137,6 +137,7 @@ export const styles = StyleSheet.create({
     flexShrink: 1,
   },
   pressed: { opacity: 0.75 },
+  playDisabled: { opacity: 0.45 },
 });
 
 export function getBackButtonStyle({ pressed }: PressableStateCallbackType) {

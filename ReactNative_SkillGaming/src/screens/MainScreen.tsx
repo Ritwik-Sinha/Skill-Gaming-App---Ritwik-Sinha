@@ -1,15 +1,19 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { BackHandler, StatusBar, View } from 'react-native';
+import { BackHandler, Pressable, StatusBar, Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useAuth } from '../auth/AuthContext';
 import AddMoneyModal from '../components/AddMoneyModal';
 import BottomTabBar, { type MainTab } from '../components/BottomTabBar';
 import TopBar from '../components/TopBar';
-import { useDemoWallet } from '../wallet/useDemoWallet';
+import { useServerWallet } from '../wallet/useServerWallet';
+import { type OwnResult } from '../services/gameApi';
+import { recoverGame } from '../services/gameSession';
 import GameScreen from './GameScreen';
 import JungleSwingScreen from './JungleSwingScreen';
 import PlayScreen from './PlayScreen';
 import ProfileScreen from './ProfileScreen';
+import ResultsScreen from './ResultsScreen';
+import ScoreSummaryScreen from './ScoreSummaryScreen';
 import styles, { containerStyle } from './MainScreen.styles';
 
 type PlayRoute = 'catalog' | 'details' | 'game';
@@ -18,22 +22,69 @@ export default function MainScreen() {
   const [activeTab, setActiveTab] = useState<MainTab>('Play');
   const [playRoute, setPlayRoute] = useState<PlayRoute>('catalog');
   const [showAddMoney, setShowAddMoney] = useState(false);
+  const [amountCents, setAmountCents] = useState(1000);
+  const [summary, setSummary] = useState<OwnResult | null>(null);
+  const [recovering, setRecovering] = useState(true);
+  const [recoveryError, setRecoveryError] = useState(false);
+  const [recoveryAttempt, setRecoveryAttempt] = useState(0);
   const { user } = useAuth();
-  const wallet = useDemoWallet(user!.uid);
+  const userId = user!.uid;
+  const wallet = useServerWallet(userId);
+  const refreshWallet = wallet.refresh;
   const insets = useSafeAreaInsets();
-  const isInGame = activeTab === 'Play' && playRoute === 'game';
+  const isInGame = playRoute === 'game';
   const showCatalog = useCallback(() => setPlayRoute('catalog'), []);
   const showDetails = useCallback(() => setPlayRoute('details'), []);
+  const showResults = useCallback(() => {
+    setSummary(null);
+    setPlayRoute('catalog');
+    setActiveTab('Results');
+  }, []);
 
   useEffect(() => {
-    if (playRoute !== 'game') {
-      // Unity changes the window's fullscreen state outside React Native.
+    let active = true;
+    setRecovering(true);
+    setRecoveryError(false);
+    recoverGame(userId)
+      .then(result => {
+        if (active && result) {
+          setSummary(result);
+        }
+      })
+      .catch(() => {
+        if (active) {
+          setRecoveryError(true);
+        }
+      })
+      .finally(() => {
+        if (active) {
+          setRecovering(false);
+        }
+      });
+    return () => {
+      active = false;
+    };
+  }, [userId, recoveryAttempt]);
+
+  useEffect(() => {
+    if (!isInGame) {
       StatusBar.setHidden(false);
       StatusBar.setBarStyle('light-content');
+      refreshWallet();
     }
-  }, [playRoute]);
+  }, [isInGame, summary, activeTab, refreshWallet]);
 
   useEffect(() => {
+    if (summary) {
+      const subscription = BackHandler.addEventListener(
+        'hardwareBackPress',
+        () => {
+          showResults();
+          return true;
+        },
+      );
+      return () => subscription.remove();
+    }
     if (activeTab !== 'Play' || playRoute !== 'details') {
       return;
     }
@@ -45,11 +96,11 @@ export default function MainScreen() {
       },
     );
     return () => subscription.remove();
-  }, [activeTab, playRoute, showCatalog]);
+  }, [activeTab, playRoute, showCatalog, showResults, summary]);
 
   return (
     <View style={containerStyle(insets)}>
-      {!isInGame && (
+      {!isInGame && !summary && (
         <TopBar
           balance={wallet.balance}
           isLoading={wallet.isLoading}
@@ -57,28 +108,62 @@ export default function MainScreen() {
           onAddMoney={() => setShowAddMoney(true)}
         />
       )}
+      {recoveryError && !isInGame && (
+        <Pressable
+          accessibilityRole="button"
+          onPress={() => setRecoveryAttempt(value => value + 1)}
+          style={styles.recoveryBanner}
+        >
+          <Text style={styles.recoveryText}>
+            Reconnect to save your previous result. Tap to retry before starting
+            another match.
+          </Text>
+        </Pressable>
+      )}
       <View style={styles.content}>
         {isInGame ? (
-          <GameScreen onExit={showDetails} paused={showAddMoney} />
+          <GameScreen
+            userId={user!.uid}
+            amountCents={amountCents}
+            onExit={showDetails}
+            onFinished={result => {
+              setPlayRoute('catalog');
+              setSummary(result);
+            }}
+          />
+        ) : summary ? (
+          <ScoreSummaryScreen result={summary} onContinue={showResults} />
         ) : activeTab === 'Play' ? (
           playRoute === 'details' ? (
             <JungleSwingScreen
               onBack={showCatalog}
-              onPlay={() => setPlayRoute('game')}
+              disabled={
+                recovering ||
+                recoveryError ||
+                wallet.isLoading ||
+                !!wallet.loadError
+              }
+              onPlay={amount => {
+                setAmountCents(amount);
+                setShowAddMoney(false);
+                setPlayRoute('game');
+              }}
             />
           ) : (
             <PlayScreen onOpenGame={showDetails} />
           )
+        ) : activeTab === 'Results' ? (
+          <ResultsScreen
+            onOpenResult={setSummary}
+            onResultsUpdated={wallet.refresh}
+          />
         ) : activeTab === 'Profile' ? (
           <ProfileScreen />
         ) : (
-          <View
-            style={styles.content}
-            testID={`empty-${activeTab.toLowerCase()}-screen`}
-          />
+          <View style={styles.content} testID="empty-leagues-screen" />
         )}
       </View>
-      {!isInGame && (
+      {!isInGame && !summary && (
         <BottomTabBar
           activeTab={activeTab}
           onSelect={tab => {
@@ -88,7 +173,7 @@ export default function MainScreen() {
         />
       )}
       <AddMoneyModal
-        visible={showAddMoney}
+        visible={showAddMoney && !isInGame && !summary}
         balance={wallet.balance}
         isLoading={wallet.isLoading}
         isAdding={wallet.isAdding}

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Pressable,
   ScrollView,
@@ -8,6 +8,7 @@ import {
 } from 'react-native';
 import AppIcon from '../components/AppIcon';
 import JungleArtwork from '../components/JungleArtwork';
+import BetSelectionModal from '../components/BetSelectionModal';
 import {
   getBackButtonStyle,
   getPlayButtonStyle,
@@ -45,13 +46,16 @@ const instructions = [
 
 interface JungleSwingScreenProps {
   onBack: () => void;
-  onPlay: () => void;
+  onPlay: (amountCents: number) => void;
+  disabled?: boolean;
 }
 
 export default function JungleSwingScreen({
   onBack,
   onPlay,
+  disabled = false,
 }: JungleSwingScreenProps) {
+  const [showBetSelection, setShowBetSelection] = useState(false);
   const { width, fontScale } = useWindowDimensions();
   const stackedInstructions = width < 350 || fontScale > 1.3;
 
@@ -128,15 +132,31 @@ export default function JungleSwingScreen({
       <View style={styles.playFooter}>
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel="Play Jungle Swing"
-          accessibilityHint="Starts the Jungle Swing game."
-          onPress={onPlay}
-          style={getPlayButtonStyle}
+          accessibilityLabel="Bet and Play"
+          accessibilityHint="Opens the bet options. Select and confirm a bet to start playing."
+          accessibilityState={{ disabled }}
+          disabled={disabled}
+          onPress={() => {
+            if (!disabled) setShowBetSelection(true);
+          }}
+          style={state => [
+            getPlayButtonStyle(state),
+            disabled && styles.playDisabled,
+          ]}
         >
           <AppIcon name="play" size={19} />
-          <Text style={styles.playLabel}>Play Jungle Swing</Text>
+          <Text style={styles.playLabel}>Bet and Play</Text>
         </Pressable>
       </View>
+      <BetSelectionModal
+        visible={showBetSelection}
+        disabled={disabled}
+        onClose={() => setShowBetSelection(false)}
+        onPlay={amountCents => {
+          setShowBetSelection(false);
+          onPlay(amountCents);
+        }}
+      />
     </View>
   );
 }
