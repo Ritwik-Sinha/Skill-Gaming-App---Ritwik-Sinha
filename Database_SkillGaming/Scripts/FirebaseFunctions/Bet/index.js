@@ -18,6 +18,9 @@ function callable(name) {
       if (error instanceof GameError) throw new functions.https.HttpsError(error.code, error.message);
       console.error(`[${name}] failed:`, error.message);
       if (SCHEMA_ERROR_CODES.has(error.code)) {
+        if (name === 'getMyRating') {
+          throw new functions.https.HttpsError('failed-precondition', 'Apply the player-ratings migration before loading ratings.');
+        }
         throw new functions.https.HttpsError('failed-precondition', 'Apply the betting and game-attempts migrations before playing.');
       }
       throw new functions.https.HttpsError('internal', 'Could not update or load the game. Please try again.');
@@ -26,7 +29,7 @@ function callable(name) {
 }
 
 for (const name of ['placeBet', 'recoverGameReservation', 'checkpointGame', 'finishGame', 'getMyBets',
-  'getPendingBetsForGame', 'getMyResults', 'getMyLeaderboard', 'getMyWallet', 'addDemoMoney', 'withdrawMoney']) {
+  'getPendingBetsForGame', 'getMyResults', 'getMyLeaderboard', 'getMyWallet', 'getMyRating', 'addDemoMoney', 'withdrawMoney']) {
   exports[name] = callable(name);
 }
 

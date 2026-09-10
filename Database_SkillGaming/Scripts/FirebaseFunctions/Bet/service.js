@@ -214,6 +214,14 @@ function createGameService(db) {
     await finalizeUnmatchedGames(uid);
     return db.transaction(async (client) => { await ensureUser(client, uid); return toWallet(await lockWallet(client, uid)); });
   }
+  async function getMyRating(uid) {
+    return db.transaction(async (client) => {
+      await ensureUser(client, uid);
+      await client.query('INSERT INTO player_ratings (firebase_uid) VALUES ($1) ON CONFLICT DO NOTHING', [uid]);
+      const result = await client.query('SELECT rating FROM player_ratings WHERE firebase_uid = $1', [uid]);
+      return { rating: Number(result.rows[0].rating) };
+    });
+  }
   async function addDemoMoney(uid, data = {}) {
     const requestId = requireRequestId(data.requestId);
     const amount = data.amountCents;
@@ -431,7 +439,7 @@ function createGameService(db) {
   return { placeBet, recoverGameReservation, checkpointGame: (uid, data) => updateAttempt(uid, data),
     finishGame: (uid, data) => updateAttempt(uid, data, true), getMyResults, getMyBets,
     getPendingBetsForGame, getMyLeaderboard, finalizeStaleGames, finalizeUnmatchedGames,
-    getMyWallet, addDemoMoney, withdrawMoney };
+    getMyWallet, getMyRating, addDemoMoney, withdrawMoney };
 }
 module.exports = { createGameService, calculateSettlement, GameError, LEASE_SECONDS, MATCH_WAIT_SECONDS,
   requireScore, requireId, requireGameId, toOwnResult };
