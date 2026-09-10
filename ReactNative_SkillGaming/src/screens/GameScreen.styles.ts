@@ -15,19 +15,17 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 20,
     paddingVertical: 10,
+    minHeight: 56,
+    gap: 12,
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: '#2D2D31',
   },
-  backButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 9,
-    minHeight: 36,
-  },
-  backText: {
+  gameTitle: {
+    flex: 1,
     color: '#FFFFFF',
-    fontSize: 15,
-    fontWeight: '600',
+    fontSize: 17,
+    lineHeight: 24,
+    fontWeight: '700',
   },
   liveBadge: {
     flexDirection: 'row',
@@ -109,11 +107,6 @@ export const containerStyle = (insets: EdgeInsets) => [
   {
     paddingBottom: insets.bottom,
   },
-];
-
-export const backButtonStyle = (pressed: boolean) => [
-  styles.backButton,
-  pressed && styles.pressed,
 ];
 
 export const retryButtonStyle = (pressed: boolean) => [

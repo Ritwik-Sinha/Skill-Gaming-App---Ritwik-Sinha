@@ -8,7 +8,6 @@ import {
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import AppIcon from '../components/AppIcon';
 import PersistentUnityView from '../components/PersistentUnityView';
 import {
   checkpointGame,
@@ -19,7 +18,6 @@ import {
 } from '../services/gameApi';
 import { saveGameFinish, startGame } from '../services/gameSession';
 import styles, {
-  backButtonStyle,
   containerStyle,
   gameAccent,
   retryButtonStyle,
@@ -235,9 +233,9 @@ export default function GameScreen({
     const back = BackHandler.addEventListener('hardwareBackPress', () => {
       if (phase === 'failed_start') {
         onExit();
-      } else {
-        finish('forfeited');
       }
+      // Consume Back throughout an attempt, including loading and saving.
+      // A blocked navigation attempt must not end or forfeit the game.
       return true;
     });
     const app = AppState.addEventListener('change', state => {
@@ -308,20 +306,17 @@ export default function GameScreen({
   return (
     <View style={containerStyle(insets)}>
       <View style={styles.toolbar}>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Leave and forfeit game"
-          disabled={phase !== 'playing' && phase !== 'starting'}
-          onPress={() => finish('forfeited')}
-          style={({ pressed }) => backButtonStyle(pressed)}
+        <Text
+          style={styles.gameTitle}
+          accessibilityRole="header"
+          numberOfLines={1}
         >
-          <AppIcon name="arrow-left" size={22} color={gameAccent} />
-          <Text style={styles.backText}>Leave game</Text>
-        </Pressable>
+          Jungle Swing
+        </Text>
         <Text style={styles.liveText}>ONE ATTEMPT</Text>
       </View>
       <Text style={styles.forfeitNotice}>
-        Leaving or closing the app forfeits this match.
+        Backgrounding or closing the app forfeits this match.
       </Text>
       <View style={styles.gameContainer}>
         {bet && (

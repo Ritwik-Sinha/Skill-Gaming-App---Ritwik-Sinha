@@ -177,9 +177,9 @@ export default function BetSelectionModal({
               </Text>
             )}
             <Text style={styles.entryRules}>
-              One attempt per entry. Leaving or backgrounding forfeits the game.
-              A win awards 90% of the combined pool. Equal scores refund both
-              entries.
+              One attempt per entry. Back is disabled during play. Backgrounding
+              or closing the app forfeits the game. A win awards 90% of the
+              combined pool. Equal scores refund both entries.
             </Text>
             <Pressable
               accessibilityRole="button"
@@ -187,7 +187,7 @@ export default function BetSelectionModal({
               accessibilityHint={
                 formattedAmount === null
                   ? 'Select a quick bet or enter a whole-dollar amount between $1 and $20 to play.'
-                  : `Uses ${formattedAmount} in demo credits for one attempt. Leaving forfeits the game.`
+                  : `Uses ${formattedAmount} in demo credits for one attempt. Back is disabled during play. Backgrounding or closing the app forfeits the game.`
               }
               accessibilityState={{ disabled: playDisabled }}
               disabled={playDisabled}

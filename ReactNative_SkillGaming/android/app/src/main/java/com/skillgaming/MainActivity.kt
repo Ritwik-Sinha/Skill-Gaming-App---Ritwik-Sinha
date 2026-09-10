@@ -11,7 +11,7 @@ class MainActivity : ReactActivity() {
   override fun dispatchKeyEvent(event: KeyEvent): Boolean {
     if (event.keyCode == KeyEvent.KEYCODE_BACK) {
       // Unity's focused surface consumes Back before ReactActivity.onKeyUp.
-      // Route it through React Native so GameScreen can await scene unloading.
+      // Route it through React Native so GameScreen can block Back during a run.
       if (event.action == KeyEvent.ACTION_UP && !event.isCanceled) {
         super.onBackPressed()
       }
