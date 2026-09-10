@@ -2,19 +2,64 @@ using UnityEngine;
 
 namespace JungleSwing
 {
-    /// <summary>Sends the final score to the host React Native app (same channel as ButtonBehavior).</summary>
+    /// <summary>Sends attempt lifecycle and score checkpoints to the host React Native app.</summary>
     public static class MobileBridge
     {
-        public static void SendEvent(string type)
+        [System.Serializable]
+        class EventMessage
         {
-            SendPayload("{\"type\":\"" + type + "\"}");
+            public string type;
+            public string game = "jungleSwing";
+            public string sessionId;
+        }
+
+        [System.Serializable]
+        class ScoreMessage : EventMessage
+        {
+            public int score;
+        }
+
+        [System.Serializable]
+        class FinalScoreMessage : ScoreMessage
+        {
+            public int highScore;
+        }
+
+        static string currentSessionId = "";
+
+        public static void SetSessionId(string sessionId)
+        {
+            currentSessionId = sessionId ?? "";
+        }
+
+        public static void SendEvent(string type, string sessionId = null)
+        {
+            SendPayload(JsonUtility.ToJson(new EventMessage
+            {
+                type = type,
+                sessionId = sessionId ?? currentSessionId
+            }));
+        }
+
+        public static void SendScoreUpdate(int score)
+        {
+            SendPayload(JsonUtility.ToJson(new ScoreMessage
+            {
+                type = "scoreUpdate",
+                sessionId = currentSessionId,
+                score = score
+            }));
         }
 
         public static void SendScore(int score, int highScore)
         {
-            string payload = "{\"type\":\"gameOver\",\"game\":\"jungleSwing\",\"score\":" + score +
-                             ",\"highScore\":" + highScore + "}";
-            SendPayload(payload);
+            SendPayload(JsonUtility.ToJson(new FinalScoreMessage
+            {
+                type = "gameOver",
+                sessionId = currentSessionId,
+                score = score,
+                highScore = highScore
+            }));
         }
 
         static void SendPayload(string payload)

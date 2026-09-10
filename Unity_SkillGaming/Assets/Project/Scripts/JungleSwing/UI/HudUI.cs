@@ -44,6 +44,7 @@ namespace JungleSwing
         {
             panel.SetActive(true);
             panelScore.text = s.ToString();
+            tapText.text = "Opening results…";
             tapText.gameObject.SetActive(true);
             score.gameObject.SetActive(false);
             shownAt = Time.time;

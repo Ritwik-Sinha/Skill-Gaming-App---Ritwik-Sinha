@@ -12,7 +12,11 @@ namespace JungleSwing
         public static GameManager Instance { get; private set; }
 
         /// <summary>Editor/testing aid: plays the game by itself when enabled.</summary>
+#if UNITY_EDITOR
         public static bool Autopilot = false;
+#else
+        public static bool Autopilot => false;
+#endif
 
         public const float MetersPerUnit = 2f;
 
@@ -42,6 +46,8 @@ namespace JungleSwing
 
         float farthestX;
         float diedAt;
+        float nextScoreUpdateAt;
+        int lastReportedScore = -1;
 
         void Awake()
         {
@@ -68,6 +74,10 @@ namespace JungleSwing
             State = GameState.Playing;
             Player.OnRunStarted();
             hud.OnRunStarted();
+            // Keep the first checkpoint out of this frame: the Android view event
+            // dispatcher may coalesce same-frame messages and drop gameStarted.
+            nextScoreUpdateAt = Time.unscaledTime + 1f;
+            MobileBridge.SendEvent("gameStarted");
         }
 
         void Update()
@@ -80,6 +90,7 @@ namespace JungleSwing
                     if (px > farthestX) farthestX = px;
                     Meters = Mathf.RoundToInt(farthestX * MetersPerUnit);
                     hud.SetScore(Meters);
+                    ReportScore();
                     world.Tick(camRig.transform.position.x);
                     ambient.Tick(Meters, px - Snake.HeadX);
                     if (Player.transform.position.y < WaterLine.SurfaceY + 0.05f)
@@ -109,27 +120,30 @@ namespace JungleSwing
                         }
                         hud.ShowGameOver(Meters);
                         if (AudioManager.Instance != null) AudioManager.Instance.PlayGameOver();
+                        ReportScore(true);
+                        MobileBridge.SendScore(Meters, HighScore);
                     }
                     break;
                 case GameState.GameOver:
-                    if (Autopilot && Time.time - diedAt > 2f)
-                    {
-                        ResetRun();
-                        break;
-                    }
-                    if (Time.time - diedAt > 1.6f && PressedDown())
-                    {
-                        if (AudioManager.Instance != null) AudioManager.Instance.PlayTap();
-                        MobileBridge.SendScore(Meters, HighScore);
-                        ResetRun();
-                    }
+                    // The host owns results and creating the next paid attempt. This run
+                    // remains terminal until the host unloads the scene.
                     break;
             }
         }
 
-        static bool PressedDown() =>
-            Input.GetMouseButtonDown(0) ||
-            (Input.touchCount > 0 && Input.GetTouch(0).phase == TouchPhase.Began);
+        void ReportScore(bool force = false)
+        {
+            if (!force && (Meters == lastReportedScore || Time.unscaledTime < nextScoreUpdateAt)) return;
+            lastReportedScore = Meters;
+            nextScoreUpdateAt = Time.unscaledTime + 1f;
+            MobileBridge.SendScoreUpdate(Meters);
+        }
+
+        void OnApplicationPause(bool paused)
+        {
+            if (paused && (State == GameState.Playing || State == GameState.Dying))
+                ReportScore(true);
+        }
 
         public void PlayerEaten()
         {
@@ -148,23 +162,12 @@ namespace JungleSwing
         {
             State = GameState.Dying;
             diedAt = Time.time;
+            ReportScore(true);
         }
 
-        void ResetRun()
+        void OnDestroy()
         {
-            Destroy(Player.gameObject);
-            Destroy(Snake.gameObject);
-            Player = null;
-            Snake = null;
-            Meters = 0;
-            farthestX = 0f;
-            world.ResetWorld();
-            SpawnActors();
-            ambient.ResetFx();
-            hud.HideGameOver();
-            hud.ShowReady();
-            camRig.Snap(0f);
-            State = GameState.Ready;
+            if (Instance == this) Instance = null;
         }
     }
 }
