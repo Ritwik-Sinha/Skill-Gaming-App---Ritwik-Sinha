@@ -18,6 +18,8 @@ import ProfileScreen from '../profile/ProfileScreen';
 import ResultsScreen from '../results/ResultsScreen';
 import ScoreSummaryScreen from '../results/ScoreSummaryScreen';
 import styles, { containerStyle } from './MainScreen.styles';
+import LeaguesScreen, { LeagueCelebration } from '../leagues/LeaguesScreen';
+import { useLeague } from '../leagues/useLeague';
 
 type PlayRoute = 'catalog' | 'details' | 'game';
 
@@ -42,6 +44,11 @@ export default function MainScreen() {
   }, [refreshWallet, refreshRating]);
   const insets = useSafeAreaInsets();
   const isInGame = playRoute === 'game';
+  const league = useLeague(userId, isInGame || recovering);
+  const refreshLeague = league.refresh;
+  useEffect(() => {
+    if (!isInGame && !recovering) refreshLeague();
+  }, [activeTab, summary, isInGame, recovering, refreshLeague]);
   const showCatalog = useCallback(() => setPlayRoute('catalog'), []);
   const showDetails = useCallback(() => setPlayRoute('details'), []);
   const showResults = useCallback(() => {
@@ -111,6 +118,10 @@ export default function MainScreen() {
     <View style={containerStyle(insets)}>
       {!isInGame && !summary && (
         <TopBar
+          crownCount={league.data?.crowns ?? null}
+          crownGoal={
+            league.data ? league.data.tiers[league.data.tier].threshold : null
+          }
           balance={wallet.balance}
           hasBalance={wallet.hasBalance}
           isLoading={wallet.isLoading}
@@ -177,7 +188,12 @@ export default function MainScreen() {
             playerRating={playerRating}
           />
         ) : (
-          <View style={styles.content} testID="empty-leagues-screen" />
+          <LeaguesScreen
+            data={league.data}
+            error={league.error}
+            loading={league.loading}
+            onRefresh={league.refresh}
+          />
         )}
       </View>
       {!isInGame && !summary && (
@@ -199,6 +215,13 @@ export default function MainScreen() {
         onClose={() => setShowAddMoney(false)}
         onAddMoney={wallet.addMoney}
         onRetryLoad={wallet.retryLoad}
+      />
+      <LeagueCelebration
+        data={league.data}
+        visible={!isInGame && !recovering && !summary && !showAddMoney}
+        onDismiss={league.dismiss}
+        dismissing={league.dismissing}
+        error={league.error}
       />
     </View>
   );

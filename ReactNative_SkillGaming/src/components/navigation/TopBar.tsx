@@ -6,8 +6,8 @@ import styles, { addButtonStyle, crownColor } from './TopBar.styles';
 
 interface TopBarProps {
   balance: number;
-  crownCount?: number;
-  crownGoal?: number;
+  crownCount?: number | null;
+  crownGoal?: number | null;
   onAddMoney: () => void;
   isLoading?: boolean;
   loadError?: string | null;
@@ -44,12 +44,20 @@ export default function TopBar({
         <View
           style={styles.crownBadge}
           accessible
-          accessibilityLabel={`${crownCount} of ${crownGoal} crowns`}
+          accessibilityLabel={
+            crownCount == null
+              ? 'Loading crowns'
+              : crownGoal == null
+              ? `${crownCount} crowns, Master league`
+              : `${crownCount} of ${crownGoal} crowns`
+          }
         >
           <AppIcon name="crown" size={23} color={crownColor} />
           <Text style={styles.crownCount}>
-            {crownCount}
-            <Text style={styles.crownGoal}>/{crownGoal}</Text>
+            {crownCount ?? '…'}
+            {crownCount != null && crownGoal != null && (
+              <Text style={styles.crownGoal}>/{crownGoal}</Text>
+            )}
           </Text>
         </View>
       </View>
