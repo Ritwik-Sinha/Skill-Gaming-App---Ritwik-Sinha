@@ -28,3 +28,18 @@ export function parseServerAmount(amount: string): number {
   if (dollars <= 0) throw new Error('Enter an amount greater than $0.');
   return dollars * 100;
 }
+
+/** Build integer cents from decimal digits, without floating-point multiplication. */
+export function parseWithdrawalAmount(amount: string): number {
+  const value = amount.trim();
+  if (!/^(?:\d+(?:\.\d{1,2})?|\.\d{1,2})$/.test(value)) {
+    throw new Error('Enter a dollar amount with at most two decimal places.');
+  }
+  const [whole, fraction = ''] = value.split('.');
+  const cents = Number(`${whole || '0'}${fraction.padEnd(2, '0')}`);
+  if (!Number.isSafeInteger(cents)) {
+    throw new Error('Enter a smaller withdrawal amount.');
+  }
+  if (cents <= 0) throw new Error('Enter an amount of at least $0.01.');
+  return cents;
+}

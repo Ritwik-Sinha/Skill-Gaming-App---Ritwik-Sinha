@@ -73,6 +73,53 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     alignSelf: 'stretch',
   },
+  walletCard: {
+    marginTop: 24,
+    padding: 22,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 24,
+  },
+  walletTitle: { color: colors.text, fontSize: 22, fontWeight: '800' },
+  walletDescription: {
+    color: colors.muted,
+    fontSize: 14,
+    lineHeight: 21,
+    marginTop: 8,
+  },
+  balanceLabel: { color: colors.muted, fontSize: 12, marginTop: 22 },
+  balanceValue: {
+    color: '#28D8A0',
+    fontSize: 32,
+    fontWeight: '800',
+    fontVariant: ['tabular-nums'],
+    marginTop: 6,
+  },
+  balanceLoading: { alignSelf: 'flex-start', marginTop: 12, marginBottom: 10 },
+  withdrawButton: {
+    minHeight: 52,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 14,
+    marginTop: 20,
+    borderRadius: 26,
+    backgroundColor: '#28D8A0',
+  },
+  withdrawLabel: { color: '#072319', fontSize: 16, fontWeight: '800' },
+  withdrawalNotice: {
+    color: '#28D8A0',
+    fontSize: 13,
+    lineHeight: 20,
+    marginTop: 14,
+  },
+  demoNote: {
+    color: colors.muted,
+    fontSize: 12,
+    lineHeight: 18,
+    marginTop: 14,
+  },
   signOutButton: {
     minHeight: 56,
     marginTop: 24,
@@ -99,6 +146,12 @@ const styles = StyleSheet.create({
 
 export const signOutButtonStyle = (pressed: boolean, disabled: boolean) => [
   styles.signOutButton,
+  pressed && styles.pressed,
+  disabled && styles.disabled,
+];
+
+export const withdrawButtonStyle = (pressed: boolean, disabled: boolean) => [
+  styles.withdrawButton,
   pressed && styles.pressed,
   disabled && styles.disabled,
 ];

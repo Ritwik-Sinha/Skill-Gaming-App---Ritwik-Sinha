@@ -112,7 +112,7 @@ const styles = StyleSheet.create({
     lineHeight: 20,
     marginTop: 12,
   },
-  addButton: {
+  submitButton: {
     minHeight: 56,
     paddingHorizontal: 20,
     paddingVertical: 16,
@@ -124,7 +124,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 10,
   },
-  addLabel: { color: colors.text, fontSize: 17, fontWeight: '800' },
+  submitLabel: { color: colors.text, fontSize: 17, fontWeight: '800' },
   paymentNote: {
     color: colors.muted,
     fontSize: 12,
@@ -148,8 +148,8 @@ export const contentStyle = (bottomInset: number) => [
   { paddingBottom: Math.max(bottomInset, 18) + 12 },
 ];
 
-export const addButtonStyle = (pressed: boolean, disabled: boolean) => [
-  styles.addButton,
+export const submitButtonStyle = (pressed: boolean, disabled: boolean) => [
+  styles.submitButton,
   pressed && styles.pressed,
   disabled && styles.disabled,
 ];

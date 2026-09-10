@@ -12,6 +12,11 @@ export interface AddDemoMoneyRequest {
   requestId: string;
 }
 
+export interface WithdrawMoneyRequest {
+  amountCents: number;
+  requestId: string;
+}
+
 function requireAccount(userId: string) {
   if (!userId || firebaseAuth.currentUser?.uid !== userId) {
     throw new Error('Your account changed. Please sign in again.');
@@ -48,6 +53,23 @@ export async function addDemoMoney(
   const call = httpsCallable<AddDemoMoneyRequest, ServerWallet>(
     firebaseFunctions,
     'addDemoMoney',
+  );
+  return checkedWallet((await call(request)).data);
+}
+
+export async function withdrawMoney(
+  request: WithdrawMoneyRequest,
+  userId: string,
+): Promise<ServerWallet> {
+  requireAccount(userId);
+  if (!Number.isSafeInteger(request.amountCents) || request.amountCents <= 0) {
+    throw new Error(
+      'Enter a withdrawal amount of at least $0.01 with at most two decimal places.',
+    );
+  }
+  const call = httpsCallable<WithdrawMoneyRequest, ServerWallet>(
+    firebaseFunctions,
+    'withdrawMoney',
   );
   return checkedWallet((await call(request)).data);
 }

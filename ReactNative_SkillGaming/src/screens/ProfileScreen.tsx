@@ -8,20 +8,40 @@ import {
   View,
 } from 'react-native';
 import { useAuth } from '../auth/AuthContext';
+import WithdrawMoneyModal from '../components/WithdrawMoneyModal';
+import { formatServerMoney } from '../wallet/serverMoney';
+import type { useServerWallet } from '../wallet/useServerWallet';
 import styles, {
   signOutButtonStyle,
   signOutIndicatorColor,
+  withdrawButtonStyle,
 } from './ProfileScreen.styles';
 
 const fallbackPhoto = require('../assets/icons/profile.png');
 
-export default function ProfileScreen() {
+interface ProfileScreenProps {
+  wallet: Pick<
+    ReturnType<typeof useServerWallet>,
+    | 'balance'
+    | 'isLoading'
+    | 'isAdding'
+    | 'isWithdrawing'
+    | 'loadError'
+    | 'withdrawMoney'
+    | 'retryLoad'
+  >;
+}
+
+export default function ProfileScreen({ wallet }: ProfileScreenProps) {
   const { user, signOut } = useAuth();
   const signingOut = useRef(false);
   const mounted = useRef(true);
   const [isSigningOut, setIsSigningOut] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [failedPhoto, setFailedPhoto] = useState<string | null>(null);
+  const [showWithdraw, setShowWithdraw] = useState(false);
+  const [withdrawalNotice, setWithdrawalNotice] = useState<string | null>(null);
+  const walletBusy = wallet.isAdding || wallet.isWithdrawing;
 
   useEffect(() => {
     mounted.current = true;
@@ -51,6 +71,18 @@ export default function ProfileScreen() {
       }
     }
   }, [signOut]);
+
+  async function handleWithdraw(amount: string) {
+    setWithdrawalNotice(null);
+    await wallet.withdrawMoney(amount);
+    if (mounted.current) {
+      setWithdrawalNotice(
+        `${formatServerMoney(
+          Number(amount),
+        )} withdrawn from your demo balance.`,
+      );
+    }
+  }
 
   if (!user) {
     return null;
@@ -96,6 +128,54 @@ export default function ProfileScreen() {
         </Text>
       </View>
 
+      <View style={styles.walletCard}>
+        <Text style={styles.walletTitle} accessibilityRole="header">
+          Withdraw money
+        </Text>
+        <Text style={styles.walletDescription}>
+          Withdraw demo credits, including dollars and cents.
+        </Text>
+        <Text style={styles.balanceLabel}>Available demo balance</Text>
+        {wallet.isLoading ? (
+          <ActivityIndicator
+            color={signOutIndicatorColor}
+            style={styles.balanceLoading}
+            accessibilityLabel="Loading withdrawal balance"
+          />
+        ) : (
+          <Text
+            style={styles.balanceValue}
+            numberOfLines={1}
+            adjustsFontSizeToFit
+          >
+            {wallet.loadError ? '—' : formatServerMoney(wallet.balance)}
+          </Text>
+        )}
+        <Pressable
+          onPress={() => setShowWithdraw(true)}
+          accessibilityRole="button"
+          accessibilityLabel="Open withdraw money"
+          accessibilityState={{ disabled: walletBusy || isSigningOut }}
+          disabled={walletBusy || isSigningOut}
+          style={({ pressed }) =>
+            withdrawButtonStyle(pressed, walletBusy || isSigningOut)
+          }
+        >
+          <Text style={styles.withdrawLabel}>Withdraw money</Text>
+        </Pressable>
+        {withdrawalNotice && (
+          <Text
+            style={styles.withdrawalNotice}
+            accessibilityLiveRegion="polite"
+          >
+            {withdrawalNotice}
+          </Text>
+        )}
+        <Text style={styles.demoNote}>
+          Demo credits only. No money is sent to a bank or payment account.
+        </Text>
+      </View>
+
       <Pressable
         onPress={handleSignOut}
         accessibilityRole="button"
@@ -118,6 +198,17 @@ export default function ProfileScreen() {
           {error}
         </Text>
       )}
+      <WithdrawMoneyModal
+        visible={showWithdraw}
+        balance={wallet.balance}
+        isLoading={wallet.isLoading}
+        isAdding={wallet.isAdding}
+        isWithdrawing={wallet.isWithdrawing}
+        loadError={wallet.loadError}
+        onClose={() => setShowWithdraw(false)}
+        onWithdrawMoney={handleWithdraw}
+        onRetryLoad={wallet.retryLoad}
+      />
     </ScrollView>
   );
 }

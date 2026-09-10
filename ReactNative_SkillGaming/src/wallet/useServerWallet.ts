@@ -3,16 +3,22 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   addDemoMoney,
   getMyWallet,
+  withdrawMoney as withdrawWalletMoney,
   type AddDemoMoneyRequest,
+  type WithdrawMoneyRequest,
   type ServerWallet,
 } from '../services/walletApi';
-import { formatServerMoney, parseServerAmount } from './serverMoney';
+import {
+  formatServerMoney,
+  parseServerAmount,
+  parseWithdrawalAmount,
+} from './serverMoney';
 
 export { formatServerMoney } from './serverMoney';
 
 const LOAD_ERROR = 'Couldn’t load your balance. Please try again.';
-const ADD_ERROR =
-  'Couldn’t confirm your top-up. Try again to safely check the same request.';
+type WalletOperation = 'topUp' | 'withdrawal';
+type WalletRequest = AddDemoMoneyRequest | WithdrawMoneyRequest;
 
 export function pendingTopUpStorageKey(userId: string) {
   return `@skillgaming/server_wallet/pending_top_up/${encodeURIComponent(
@@ -20,26 +26,55 @@ export function pendingTopUpStorageKey(userId: string) {
   )}`;
 }
 
-// Only active operations are shared across remounts; balances are never persisted locally.
-const pendingAdds = new Map<string, Promise<ServerWallet>>();
+export function pendingWithdrawalStorageKey(userId: string) {
+  return `@skillgaming/server_wallet/pending_withdrawal/${encodeURIComponent(
+    userId,
+  )}`;
+}
+
+const operations = {
+  topUp: {
+    label: 'top-up',
+    idPrefix: 'topup',
+    storageKey: pendingTopUpStorageKey,
+    call: addDemoMoney,
+  },
+  withdrawal: {
+    label: 'withdrawal',
+    idPrefix: 'withdrawal',
+    storageKey: pendingWithdrawalStorageKey,
+    call: withdrawWalletMoney,
+  },
+};
+
+// Share in-flight work across remounts, with one mutation per account.
+// Balances are always fetched from the server and are never stored locally.
+const pendingChanges = new Map<
+  string,
+  { kind: WalletOperation; promise: Promise<ServerWallet> }
+>();
 const pendingLoads = new Map<string, Promise<ServerWallet>>();
 
 async function readPending(
   userId: string,
-): Promise<AddDemoMoneyRequest | null> {
-  const saved = await AsyncStorage.getItem(pendingTopUpStorageKey(userId));
+  kind: WalletOperation,
+): Promise<WalletRequest | null> {
+  const operation = operations[kind];
+  const saved = await AsyncStorage.getItem(operation.storageKey(userId));
   if (saved === null) return null;
-  const request = JSON.parse(saved) as AddDemoMoneyRequest;
+  const request = JSON.parse(saved) as WalletRequest;
   if (
     !request ||
     typeof request.requestId !== 'string' ||
     !request.requestId ||
     !Number.isSafeInteger(request.amountCents) ||
     request.amountCents <= 0 ||
-    request.amountCents % 100 !== 0 ||
-    request.amountCents > 99_999_900
+    (kind === 'topUp' &&
+      (request.amountCents % 100 !== 0 || request.amountCents > 99_999_900))
   ) {
-    throw new Error('Couldn’t read your pending top-up. Please try again.');
+    throw new Error(
+      `Couldn’t read your pending ${operation.label}. Please try again.`,
+    );
   }
   return request;
 }
@@ -51,61 +86,87 @@ function definitelyRejected(cause: unknown) {
     'functions/failed-precondition',
     'functions/permission-denied',
     'functions/resource-exhausted',
+    'functions/already-exists',
   ].includes(code ?? '');
 }
 
-function submitTopUp(
+function submitChange(
   userId: string,
+  kind: WalletOperation,
   amountCents?: number,
 ): Promise<ServerWallet> {
-  const active = pendingAdds.get(userId);
-  if (active) return active;
+  const active = pendingChanges.get(userId);
+  if (active) {
+    return active.kind === kind
+      ? active.promise
+      : Promise.reject(
+          new Error(
+            'A wallet transaction is already in progress. Please wait.',
+          ),
+        );
+  }
+  const operation = operations[kind];
   const promise = Promise.resolve()
     .then(async () => {
-      let request = await readPending(userId);
+      // An unconfirmed debit or credit must be resolved before starting another kind.
+      const otherKind = kind === 'topUp' ? 'withdrawal' : 'topUp';
+      const otherPending = await readPending(userId, otherKind);
+      if (otherPending && amountCents !== undefined) {
+        throw new Error(
+          `Your previous ${formatServerMoney(otherPending.amountCents / 100)} ${
+            operations[otherKind].label
+          } is pending. Refresh your balance to check it first.`,
+        );
+      }
+      let request = await readPending(userId, kind);
       if (
         request &&
         amountCents !== undefined &&
         request.amountCents !== amountCents
       ) {
         throw new Error(
-          `Your previous ${formatServerMoney(
-            request.amountCents / 100,
-          )} top-up is pending. Retry that amount first.`,
+          `Your previous ${formatServerMoney(request.amountCents / 100)} ${
+            operation.label
+          } is pending. Retry that amount first.`,
         );
       }
       if (!request) {
         if (amountCents === undefined) return getMyWallet(userId);
         request = {
-          requestId: `topup-${Date.now().toString(36)}-${Math.random()
+          requestId: `${operation.idPrefix}-${Date.now().toString(
+            36,
+          )}-${Math.random().toString(36).slice(2)}-${Math.random()
             .toString(36)
-            .slice(2)}-${Math.random().toString(36).slice(2)}`,
+            .slice(2)}`,
           amountCents,
         };
-        // Persist the id before the callable: a process death must not create a second credit.
+        // Persist before the callable: losing the response must never duplicate money movement.
         await AsyncStorage.setItem(
-          pendingTopUpStorageKey(userId),
+          operation.storageKey(userId),
           JSON.stringify(request),
         );
       }
       let wallet: ServerWallet;
       try {
-        wallet = await addDemoMoney(request, userId);
+        wallet = await operation.call(request, userId);
       } catch (cause) {
         if (definitelyRejected(cause)) {
-          await AsyncStorage.removeItem(pendingTopUpStorageKey(userId));
+          await AsyncStorage.removeItem(operation.storageKey(userId));
           throw cause;
         }
-        throw new Error(ADD_ERROR);
+        throw new Error(
+          `Couldn’t confirm your ${operation.label}. Try again to safely check the same request.`,
+        );
       }
-      // If cleanup fails, keep the request and replay its id safely on the next retry.
-      await AsyncStorage.removeItem(pendingTopUpStorageKey(userId));
+      // Failed cleanup keeps the same id available for a safe retry.
+      await AsyncStorage.removeItem(operation.storageKey(userId));
       return wallet;
     })
     .finally(() => {
-      if (pendingAdds.get(userId) === promise) pendingAdds.delete(userId);
+      if (pendingChanges.get(userId)?.promise === promise)
+        pendingChanges.delete(userId);
     });
-  pendingAdds.set(userId, promise);
+  pendingChanges.set(userId, { kind, promise });
   return promise;
 }
 
@@ -114,9 +175,18 @@ function loadWallet(userId: string): Promise<ServerWallet> {
   if (active) return active;
   const promise = Promise.resolve()
     .then(async () => {
-      const pending = pendingAdds.get(userId);
-      if (pending) await pending.catch(() => undefined);
-      if (await readPending(userId)) await submitTopUp(userId);
+      const pending = pendingChanges.get(userId);
+      if (pending) await pending.promise.catch(() => undefined);
+      for (const kind of ['topUp', 'withdrawal'] as const) {
+        if (await readPending(userId, kind)) {
+          try {
+            await submitChange(userId, kind);
+          } catch (cause) {
+            // A confirmed rejection removed the journal; the real balance can now load.
+            if (!definitelyRejected(cause)) throw cause;
+          }
+        }
+      }
       return getMyWallet(userId);
     })
     .finally(() => {
@@ -131,6 +201,7 @@ interface WalletState {
   balance: number;
   isLoading: boolean;
   isAdding: boolean;
+  isWithdrawing: boolean;
   loadError: string | null;
 }
 interface WalletSession extends WalletState {
@@ -144,6 +215,7 @@ function initialState(userId: string): WalletState {
     balance: 0,
     isLoading: true,
     isAdding: false,
+    isWithdrawing: false,
     loadError: null,
   };
 }
@@ -158,6 +230,7 @@ export function useServerWallet(userId: string) {
         balance: session.balance,
         isLoading: session.isLoading,
         isAdding: session.isAdding,
+        isWithdrawing: session.isWithdrawing,
         loadError: session.loadError,
       });
     }
@@ -199,7 +272,12 @@ export function useServerWallet(userId: string) {
 
   const refresh = useCallback(async () => {
     const session = sessionRef.current;
-    if (session?.active && session.userId === userId && !session.isAdding) {
+    if (
+      session?.active &&
+      session.userId === userId &&
+      !session.isAdding &&
+      !session.isWithdrawing
+    ) {
       await load(session);
     }
   }, [load, userId]);
@@ -214,10 +292,13 @@ export function useServerWallet(userId: string) {
         throw new Error('Reload your balance before adding money.');
       if (
         session.isAdding ||
-        pendingAdds.has(userId) ||
+        session.isWithdrawing ||
+        pendingChanges.has(userId) ||
         pendingLoads.has(userId)
       ) {
-        throw new Error('Money is already being added. Please wait.');
+        throw new Error(
+          'A wallet transaction is already in progress. Please wait.',
+        );
       }
       const amountCents = parseServerAmount(amount);
       // The server checks the resulting balance atomically, including pending/retried credits.
@@ -225,9 +306,43 @@ export function useServerWallet(userId: string) {
       publish(session);
       try {
         session.balance =
-          (await submitTopUp(userId, amountCents)).balanceCents / 100;
+          (await submitChange(userId, 'topUp', amountCents)).balanceCents / 100;
       } finally {
         session.isAdding = false;
+        publish(session);
+      }
+    },
+    [publish, userId],
+  );
+
+  const withdrawMoney = useCallback(
+    async (amount: string): Promise<void> => {
+      const session = sessionRef.current;
+      if (!session?.active || session.userId !== userId || session.isLoading) {
+        throw new Error('Please wait for your balance to load.');
+      }
+      if (session.loadError)
+        throw new Error('Reload your balance before withdrawing money.');
+      if (
+        session.isAdding ||
+        session.isWithdrawing ||
+        pendingChanges.has(userId) ||
+        pendingLoads.has(userId)
+      ) {
+        throw new Error(
+          'A wallet transaction is already in progress. Please wait.',
+        );
+      }
+      const amountCents = parseWithdrawalAmount(amount);
+      // Only the server checks available funds, including retries of an already applied debit.
+      session.isWithdrawing = true;
+      publish(session);
+      try {
+        session.balance =
+          (await submitChange(userId, 'withdrawal', amountCents)).balanceCents /
+          100;
+      } finally {
+        session.isWithdrawing = false;
         publish(session);
       }
     },
@@ -239,8 +354,10 @@ export function useServerWallet(userId: string) {
     balance: visibleState.balance,
     isLoading: visibleState.isLoading,
     isAdding: visibleState.isAdding,
+    isWithdrawing: visibleState.isWithdrawing,
     loadError: visibleState.loadError,
     addMoney,
+    withdrawMoney,
     retryLoad: refresh,
     refresh,
   };

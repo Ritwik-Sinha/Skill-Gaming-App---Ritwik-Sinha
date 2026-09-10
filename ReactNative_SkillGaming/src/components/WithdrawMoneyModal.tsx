@@ -24,34 +24,36 @@ import styles, {
   retryButtonStyle,
 } from './MoneyModal.styles';
 
-interface AddMoneyModalProps {
+interface WithdrawMoneyModalProps {
   visible: boolean;
   balance: number;
   isLoading: boolean;
-  isAdding: boolean;
+  isWithdrawing: boolean;
+  isAdding?: boolean;
   loadError: string | null;
   onClose: () => void;
-  onAddMoney: (amount: string) => Promise<void>;
+  onWithdrawMoney: (amount: string) => Promise<void>;
   onRetryLoad: () => Promise<void>;
 }
 
-export default function AddMoneyModal({
+export default function WithdrawMoneyModal({
   visible,
   balance,
   isLoading,
-  isAdding,
+  isWithdrawing,
+  isAdding = false,
   loadError,
   onClose,
-  onAddMoney,
+  onWithdrawMoney,
   onRetryLoad,
-}: AddMoneyModalProps) {
+}: WithdrawMoneyModalProps) {
   const insets = useSafeAreaInsets();
   const pending = useRef(false);
   const mounted = useRef(true);
   const [amount, setAmount] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
-  const busy = isAdding || submitting;
+  const busy = isWithdrawing || isAdding || submitting;
   const disabled = busy || isLoading || Boolean(loadError) || !amount.trim();
 
   useEffect(() => {
@@ -69,7 +71,7 @@ export default function AddMoneyModal({
   }, [visible]);
 
   function handleClose() {
-    if (!pending.current && !isAdding) {
+    if (!pending.current && !busy) {
       Keyboard.dismiss();
       onClose();
     }
@@ -84,7 +86,7 @@ export default function AddMoneyModal({
     setSubmitting(true);
     setError(null);
     try {
-      await onAddMoney(amount);
+      await onWithdrawMoney(amount);
       if (mounted.current) {
         Keyboard.dismiss();
         setAmount('');
@@ -95,7 +97,7 @@ export default function AddMoneyModal({
         setError(
           cause instanceof Error
             ? cause.message
-            : 'Couldn’t add money. Please try again.',
+            : 'Couldn’t withdraw money. Please try again.',
         );
       }
     } finally {
@@ -142,12 +144,12 @@ export default function AddMoneyModal({
           disabled={busy}
           accessible={false}
           importantForAccessibility="no"
-          testID="add-money-backdrop"
+          testID="withdraw-money-backdrop"
         />
         <View
           style={styles.sheet}
           accessibilityViewIsModal
-          testID="add-money-modal"
+          testID="withdraw-money-modal"
         >
           <ScrollView
             contentContainerStyle={contentStyle(insets.bottom)}
@@ -168,7 +170,7 @@ export default function AddMoneyModal({
                 onPress={handleClose}
                 style={({ pressed }) => closeButtonStyle(pressed, busy)}
                 accessibilityRole="button"
-                accessibilityLabel="Close add money"
+                accessibilityLabel="Close withdraw money"
                 accessibilityState={{ disabled: busy }}
                 disabled={busy}
               >
@@ -177,14 +179,14 @@ export default function AddMoneyModal({
             </View>
 
             <Text style={styles.title} accessibilityRole="header">
-              Add money
+              Withdraw money
             </Text>
             <Text style={styles.subtitle}>
-              Add whole dollars to your demo balance.
+              Withdraw from your demo balance, including cents.
             </Text>
 
             <View style={styles.balanceRow}>
-              <Text style={styles.balanceLabel}>Current balance</Text>
+              <Text style={styles.balanceLabel}>Available balance</Text>
               {isLoading ? (
                 <ActivityIndicator
                   color={inputSelectionColor}
@@ -210,17 +212,17 @@ export default function AddMoneyModal({
                   setAmount(value);
                   setError(null);
                 }}
-                placeholder="0"
+                placeholder="0.00"
                 placeholderTextColor={inputPlaceholderColor}
                 selectionColor={inputSelectionColor}
                 style={styles.input}
-                keyboardType="number-pad"
+                keyboardType="decimal-pad"
                 returnKeyType="done"
-                onSubmitEditing={handleSubmit}
+                onSubmitEditing={Keyboard.dismiss}
                 editable={!busy && !isLoading && !loadError}
-                accessibilityLabel="Amount to add"
-                accessibilityHint="Enter a whole-dollar amount without decimals."
-                maxLength={12}
+                accessibilityLabel="Amount to withdraw"
+                accessibilityHint="Enter a dollar amount with up to two decimal places."
+                maxLength={18}
                 autoCorrect={false}
                 autoCapitalize="none"
                 selectTextOnFocus
@@ -251,17 +253,19 @@ export default function AddMoneyModal({
               onPress={handleSubmit}
               style={({ pressed }) => submitButtonStyle(pressed, disabled)}
               accessibilityRole="button"
-              accessibilityLabel="Add money"
+              accessibilityLabel="Withdraw money"
               accessibilityState={{ disabled, busy }}
               disabled={disabled}
-              testID="confirm-add-money"
+              testID="confirm-withdraw-money"
             >
               {busy && <ActivityIndicator color={indicatorColor} />}
               <Text style={styles.submitLabel}>
-                {busy ? 'Adding…' : 'Add money'}
+                {busy ? 'Withdrawing…' : 'Withdraw money'}
               </Text>
             </Pressable>
-            <Text style={styles.paymentNote}>No payment is taken.</Text>
+            <Text style={styles.paymentNote}>
+              Demo credits only. No money is sent to a bank or payment account.
+            </Text>
           </ScrollView>
         </View>
       </KeyboardAvoidingView>

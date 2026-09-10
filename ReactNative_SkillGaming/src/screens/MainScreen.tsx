@@ -141,6 +141,8 @@ export default function MainScreen() {
                 recovering ||
                 recoveryError ||
                 wallet.isLoading ||
+                wallet.isAdding ||
+                wallet.isWithdrawing ||
                 !!wallet.loadError
               }
               onPlay={amount => {
@@ -158,7 +160,7 @@ export default function MainScreen() {
             onResultsUpdated={wallet.refresh}
           />
         ) : activeTab === 'Profile' ? (
-          <ProfileScreen />
+          <ProfileScreen key={userId} wallet={wallet} />
         ) : (
           <View style={styles.content} testID="empty-leagues-screen" />
         )}
@@ -175,7 +177,7 @@ export default function MainScreen() {
       <AddMoneyModal
         visible={showAddMoney && !isInGame && !summary}
         balance={wallet.balance}
-        isLoading={wallet.isLoading}
+        isLoading={wallet.isLoading || wallet.isWithdrawing}
         isAdding={wallet.isAdding}
         loadError={wallet.loadError}
         onClose={() => setShowAddMoney(false)}
