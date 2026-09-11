@@ -1,6 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
 import {
-  ActivityIndicator,
   Image,
   Modal,
   Pressable,
@@ -204,6 +203,10 @@ export default function LeaguesScreen({
   onRefresh: () => void;
 }) {
   const [guide, setGuide] = useState(false);
+  const [pullRefreshing, setPullRefreshing] = useState(false);
+  useEffect(() => {
+    if (!loading) setPullRefreshing(false);
+  }, [loading, pullRefreshing]);
   const [section, setSection] = useState<'standings' | 'payouts'>('standings');
   const [now, setNow] = useState(Date.now());
   const insets = useSafeAreaInsets();
@@ -220,7 +223,6 @@ export default function LeaguesScreen({
   if (!data)
     return (
       <View style={styles.center}>
-        {loading ? <ActivityIndicator color="#D0A27E" /> : null}
         <Text style={styles.muted}>{error || 'Loading your league…'}</Text>
         <Pressable accessibilityRole="button" onPress={onRefresh}>
           <Text style={styles.link}>Retry</Text>
@@ -246,8 +248,11 @@ export default function LeaguesScreen({
         contentContainerStyle={styles.content}
         refreshControl={
           <RefreshControl
-            refreshing={loading}
-            onRefresh={onRefresh}
+            refreshing={loading && pullRefreshing}
+            onRefresh={() => {
+              setPullRefreshing(true);
+              onRefresh();
+            }}
             tintColor="#DDD"
           />
         }

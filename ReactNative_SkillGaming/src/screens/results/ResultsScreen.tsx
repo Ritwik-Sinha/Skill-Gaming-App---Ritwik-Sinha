@@ -1,6 +1,5 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import {
-  ActivityIndicator,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -155,6 +154,11 @@ export default function ResultsScreen({
     resultsDisplayCache,
     userId,
   );
+  const [pullRefreshing, setPullRefreshing] = useState(false);
+  useEffect(() => {
+    if (!loading) setPullRefreshing(false);
+  }, [loading, pullRefreshing]);
+  useEffect(() => setPullRefreshing(false), [userId]);
   useEffect(() => {
     if (fetchCount > 0) onResultsUpdated?.();
   }, [fetchCount, onResultsUpdated]);
@@ -174,8 +178,11 @@ export default function ResultsScreen({
       showsVerticalScrollIndicator={false}
       refreshControl={
         <RefreshControl
-          refreshing={loading && data !== null}
-          onRefresh={refresh}
+          refreshing={loading && pullRefreshing}
+          onRefresh={() => {
+            setPullRefreshing(true);
+            refresh();
+          }}
           tintColor={resultGreen}
           colors={[resultGreen]}
         />
@@ -252,7 +259,6 @@ export default function ResultsScreen({
       )}
       {loading && data === null ? (
         <View style={styles.stateCard} accessibilityLiveRegion="polite">
-          <ActivityIndicator color={resultGreen} size="large" />
           <Text style={styles.stateDescription}>Loading your results…</Text>
         </View>
       ) : data !== null && results.length === 0 ? (
