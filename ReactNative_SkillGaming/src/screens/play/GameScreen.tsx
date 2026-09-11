@@ -8,6 +8,7 @@ import {
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import Orientation from 'react-native-orientation-locker';
 import PersistentUnityView from '../../components/game/PersistentUnityView';
 import {
   checkpointGame,
@@ -44,6 +45,10 @@ export default function GameScreen({
   onFinished,
 }: GameScreenProps) {
   const insets = useSafeAreaInsets();
+  useEffect(() => {
+    Orientation.lockToPortrait();
+    return () => Orientation.unlockAllOrientations();
+  }, []);
   const unityRef = useRef<PersistentUnityView>(null);
   const betRef = useRef<Bet | null>(null);
   const [bet, setBet] = useState<Bet | null>(null);

@@ -1,5 +1,7 @@
 package com.skillgaming
 
+import android.content.Intent
+import android.content.res.Configuration
 import android.view.KeyEvent
 import com.facebook.react.ReactActivity
 import com.facebook.react.ReactActivityDelegate
@@ -7,6 +9,14 @@ import com.facebook.react.defaults.DefaultNewArchitectureEntryPoint.fabricEnable
 import com.facebook.react.defaults.DefaultReactActivityDelegate
 
 class MainActivity : ReactActivity() {
+
+  override fun onConfigurationChanged(newConfig: Configuration) {
+    super.onConfigurationChanged(newConfig)
+    sendBroadcast(Intent("onConfigurationChanged").apply {
+      setPackage(packageName)
+      putExtra("newConfig", newConfig)
+    })
+  }
 
   override fun dispatchKeyEvent(event: KeyEvent): Boolean {
     if (event.keyCode == KeyEvent.KEYCODE_BACK) {

@@ -1,5 +1,13 @@
 /* eslint-env jest */
 
+jest.mock('react-native-orientation-locker', () => ({
+  __esModule: true,
+  default: {
+    lockToPortrait: jest.fn(),
+    unlockAllOrientations: jest.fn(),
+  },
+}));
+
 jest.mock('@react-native-async-storage/async-storage', () => {
   let store = {};
   return {
