@@ -1,0 +1,395 @@
+<?xml version="1.0" encoding="utf-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN"
+  "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg xmlns:xlink="http://www.w3.org/1999/xlink" width="973.051875pt" height="497.16pt" viewBox="0 0 973.051875 497.16" xmlns="http://www.w3.org/2000/svg" version="1.1">
+ <metadata>
+  <rdf:RDF xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:cc="http://creativecommons.org/ns#" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+   <cc:Work>
+    <dc:type rdf:resource="http://purl.org/dc/dcmitype/StillImage"/>
+    <dc:format>image/svg+xml</dc:format>
+    <dc:creator>
+     <cc:Agent>
+      <dc:title>Matplotlib; synthetic reward analysis</dc:title>
+     </cc:Agent>
+    </dc:creator>
+   </cc:Work>
+  </rdf:RDF>
+ </metadata>
+ <defs>
+  <style type="text/css">*{stroke-linejoin: round; stroke-linecap: butt}</style>
+ </defs>
+ <g id="figure_1">
+  <g id="patch_1">
+   <path d="M 0 497.16 
+L 973.051875 497.16 
+L 973.051875 0 
+L 0 0 
+z
+" style="fill: #ffffff"/>
+  </g>
+  <g id="axes_1">
+   <g id="patch_2">
+    <path d="M 62.971875 383.4 
+L 336.818029 383.4 
+L 336.818029 106.2 
+L 62.971875 106.2 
+z
+" style="fill: #ffffff"/>
+   </g>
+   <g id="matplotlib.axis_1">
+    <g id="xtick_1">
+     <g id="line2d_1"/>
+     <g id="text_1">
+      <text style="fill: #243247; font: 11px 'DejaVu Sans'" transform="translate(97.916724 399.758281)">Opening</text>
+      <text style="fill: #243247; font: 11px 'DejaVu Sans'" transform="translate(87.654068 412.075875)">settled cash</text>
+     </g>
+    </g>
+    <g id="xtick_2">
+     <g id="line2d_2"/>
+     <g id="text_2">
+      <text style="fill: #243247; font: 11px 'DejaVu Sans'" transform="translate(252.357711 399.758281)">Protected</text>
+      <text style="fill: #243247; font: 11px 'DejaVu Sans'" transform="translate(257.456383 412.075875)">amount</text>
+     </g>
+    </g>
+   </g>
+   <g id="matplotlib.axis_2">
+    <g id="ytick_1">
+     <g id="line2d_3">
+      <path d="M 62.971875 383.4 
+L 336.818029 383.4 
+" clip-path="url(#p9604c62de3)" style="fill: none; stroke: #e6ebf0; stroke-width: 0.8; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_4"/>
+     <g id="text_3">
+      <text style="fill: #243247; font: 11px 'DejaVu Sans'; text-anchor: end" x="54.971875" y="387.579141" transform="rotate(-0 54.971875 387.579141)">$0</text>
+     </g>
+    </g>
+    <g id="ytick_2">
+     <g id="line2d_5">
+      <path d="M 62.971875 335.370891 
+L 336.818029 335.370891 
+" clip-path="url(#p9604c62de3)" style="fill: none; stroke: #e6ebf0; stroke-width: 0.8; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_6"/>
+     <g id="text_4">
+      <text style="fill: #243247; font: 11px 'DejaVu Sans'; text-anchor: end" x="54.971875" y="339.550032" transform="rotate(-0 54.971875 339.550032)">$10k</text>
+     </g>
+    </g>
+    <g id="ytick_3">
+     <g id="line2d_7">
+      <path d="M 62.971875 287.341783 
+L 336.818029 287.341783 
+" clip-path="url(#p9604c62de3)" style="fill: none; stroke: #e6ebf0; stroke-width: 0.8; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_8"/>
+     <g id="text_5">
+      <text style="fill: #243247; font: 11px 'DejaVu Sans'; text-anchor: end" x="54.971875" y="291.520924" transform="rotate(-0 54.971875 291.520924)">$20k</text>
+     </g>
+    </g>
+    <g id="ytick_4">
+     <g id="line2d_9">
+      <path d="M 62.971875 239.312674 
+L 336.818029 239.312674 
+" clip-path="url(#p9604c62de3)" style="fill: none; stroke: #e6ebf0; stroke-width: 0.8; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_10"/>
+     <g id="text_6">
+      <text style="fill: #243247; font: 11px 'DejaVu Sans'; text-anchor: end" x="54.971875" y="243.491815" transform="rotate(-0 54.971875 243.491815)">$30k</text>
+     </g>
+    </g>
+    <g id="ytick_5">
+     <g id="line2d_11">
+      <path d="M 62.971875 191.283566 
+L 336.818029 191.283566 
+" clip-path="url(#p9604c62de3)" style="fill: none; stroke: #e6ebf0; stroke-width: 0.8; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_12"/>
+     <g id="text_7">
+      <text style="fill: #243247; font: 11px 'DejaVu Sans'; text-anchor: end" x="54.971875" y="195.462706" transform="rotate(-0 54.971875 195.462706)">$40k</text>
+     </g>
+    </g>
+    <g id="ytick_6">
+     <g id="line2d_13">
+      <path d="M 62.971875 143.254457 
+L 336.818029 143.254457 
+" clip-path="url(#p9604c62de3)" style="fill: none; stroke: #e6ebf0; stroke-width: 0.8; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_14"/>
+     <g id="text_8">
+      <text style="fill: #243247; font: 11px 'DejaVu Sans'; text-anchor: end" x="54.971875" y="147.433598" transform="rotate(-0 54.971875 147.433598)">$50k</text>
+     </g>
+    </g>
+    <g id="text_9">
+     <text style="fill: #243247; font: 11px 'DejaVu Sans'; text-anchor: middle" x="21.318281" y="244.8" transform="rotate(-90 21.318281 244.8)">USD</text>
+    </g>
+   </g>
+   <g id="patch_3">
+    <path d="M 75.419427 383.4 
+L 166.806521 383.4 
+L 166.806521 150.458824 
+L 75.419427 150.458824 
+z
+" clip-path="url(#p9604c62de3)" style="fill: #2563a6"/>
+   </g>
+   <g id="patch_4">
+    <path d="M 232.983382 383.4 
+L 324.370476 383.4 
+L 324.370476 151.054384 
+L 232.983382 151.054384 
+z
+" clip-path="url(#p9604c62de3)" style="fill: #7b8797"/>
+   </g>
+   <g id="text_10">
+    <text style="fill: #243247; font: 700 11px 'DejaVu Sans'; text-anchor: middle" x="121.112974" y="145.655913" transform="rotate(-0 121.112974 145.655913)">$48,500</text>
+   </g>
+   <g id="text_11">
+    <text style="fill: #243247; font: 700 11px 'DejaVu Sans'; text-anchor: middle" x="278.676929" y="146.251474" transform="rotate(-0 278.676929 146.251474)">$48,376</text>
+   </g>
+   <g id="text_12">
+    <g id="patch_5">
+     <path d="M 153.859483 252.141469 
+L 245.930421 252.141469 
+Q 255.280421 252.141469 255.280421 242.791469 
+L 255.280421 226.338656 
+Q 255.280421 216.988656 245.930421 216.988656 
+L 153.859483 216.988656 
+Q 144.509483 216.988656 144.509483 226.338656 
+L 144.509483 242.791469 
+Q 144.509483 252.141469 153.859483 252.141469 
+z
+" style="fill: #ffffff; stroke: #e6ebf0; stroke-linejoin: miter"/>
+    </g>
+    <text style="fill: #243247; font: 700 17px 'DejaVu Sans'; text-anchor: middle" x="199.894952" y="239.256" transform="rotate(-0 199.894952 239.256)">$124 free</text>
+   </g>
+   <g id="text_13">
+    <text style="fill: #243247; font: 700 12px 'DejaVu Sans'; text-anchor: start" x="62.971875" y="86.2" transform="rotate(-0 62.971875 86.2)">1. Starting cash constraint</text>
+   </g>
+  </g>
+  <g id="axes_2">
+   <g id="patch_6">
+    <path d="M 467.168798 383.4 
+L 960.091875 383.4 
+L 960.091875 106.2 
+L 467.168798 106.2 
+z
+" style="fill: #ffffff"/>
+   </g>
+   <g id="matplotlib.axis_3">
+    <g id="xtick_3">
+     <g id="line2d_15"/>
+     <g id="text_14">
+      <text style="fill: #243247; font: 10px 'DejaVu Sans'" transform="translate(489.660008 398.998437)">Free before</text>
+      <text style="fill: #243247; font: 10px 'DejaVu Sans'" transform="translate(498.944383 410.19625)">funding</text>
+     </g>
+    </g>
+    <g id="xtick_4">
+     <g id="line2d_16"/>
+     <g id="text_15">
+      <text style="fill: #243247; font: 10px 'DejaVu Sans'" transform="translate(580.248688 398.998437)">New company</text>
+      <text style="fill: #243247; font: 10px 'DejaVu Sans'" transform="translate(600.061188 410.19625)">equity</text>
+     </g>
+    </g>
+    <g id="xtick_5">
+     <g id="line2d_17"/>
+     <g id="text_16">
+      <text style="fill: #243247; font: 10px 'DejaVu Sans'" transform="translate(690.998305 398.998437)">Available</text>
+      <text style="fill: #243247; font: 10px 'DejaVu Sans'" transform="translate(681.208462 410.19625)">after funding</text>
+     </g>
+    </g>
+    <g id="xtick_6">
+     <g id="line2d_18"/>
+     <g id="text_17">
+      <text style="fill: #243247; font: 10px 'DejaVu Sans'" transform="translate(778.706516 398.998437)">Reserve next</text>
+      <text style="fill: #243247; font: 10px 'DejaVu Sans'" transform="translate(781.885423 410.19625)">reward pool</text>
+     </g>
+    </g>
+    <g id="xtick_7">
+     <g id="line2d_19"/>
+     <g id="text_18">
+      <text style="fill: #243247; font: 10px 'DejaVu Sans'" transform="translate(885.28504 398.998437)">Free after</text>
+      <text style="fill: #243247; font: 10px 'DejaVu Sans'" transform="translate(880.955352 410.19625)">reservation</text>
+     </g>
+    </g>
+   </g>
+   <g id="matplotlib.axis_4">
+    <g id="ytick_7">
+     <g id="line2d_20">
+      <path d="M 467.168798 383.4 
+L 960.091875 383.4 
+" clip-path="url(#p2a4de425c7)" style="fill: none; stroke: #e6ebf0; stroke-width: 0.8; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_21"/>
+     <g id="text_19">
+      <text style="fill: #243247; font: 11px 'DejaVu Sans'; text-anchor: end" x="459.168798" y="387.579141" transform="rotate(-0 459.168798 387.579141)">$0</text>
+     </g>
+    </g>
+    <g id="ytick_8">
+     <g id="line2d_22">
+      <path d="M 467.168798 338.513964 
+L 960.091875 338.513964 
+" clip-path="url(#p2a4de425c7)" style="fill: none; stroke: #e6ebf0; stroke-width: 0.8; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_23"/>
+     <g id="text_20">
+      <text style="fill: #243247; font: 11px 'DejaVu Sans'; text-anchor: end" x="459.168798" y="342.693105" transform="rotate(-0 459.168798 342.693105)">$2k</text>
+     </g>
+    </g>
+    <g id="ytick_9">
+     <g id="line2d_24">
+      <path d="M 467.168798 293.627928 
+L 960.091875 293.627928 
+" clip-path="url(#p2a4de425c7)" style="fill: none; stroke: #e6ebf0; stroke-width: 0.8; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_25"/>
+     <g id="text_21">
+      <text style="fill: #243247; font: 11px 'DejaVu Sans'; text-anchor: end" x="459.168798" y="297.807068" transform="rotate(-0 459.168798 297.807068)">$4k</text>
+     </g>
+    </g>
+    <g id="ytick_10">
+     <g id="line2d_26">
+      <path d="M 467.168798 248.741892 
+L 960.091875 248.741892 
+" clip-path="url(#p2a4de425c7)" style="fill: none; stroke: #e6ebf0; stroke-width: 0.8; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_27"/>
+     <g id="text_22">
+      <text style="fill: #243247; font: 11px 'DejaVu Sans'; text-anchor: end" x="459.168798" y="252.921032" transform="rotate(-0 459.168798 252.921032)">$6k</text>
+     </g>
+    </g>
+    <g id="ytick_11">
+     <g id="line2d_28">
+      <path d="M 467.168798 203.855856 
+L 960.091875 203.855856 
+" clip-path="url(#p2a4de425c7)" style="fill: none; stroke: #e6ebf0; stroke-width: 0.8; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_29"/>
+     <g id="text_23">
+      <text style="fill: #243247; font: 11px 'DejaVu Sans'; text-anchor: end" x="459.168798" y="208.034996" transform="rotate(-0 459.168798 208.034996)">$8k</text>
+     </g>
+    </g>
+    <g id="ytick_12">
+     <g id="line2d_30">
+      <path d="M 467.168798 158.969819 
+L 960.091875 158.969819 
+" clip-path="url(#p2a4de425c7)" style="fill: none; stroke: #e6ebf0; stroke-width: 0.8; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_31"/>
+     <g id="text_24">
+      <text style="fill: #243247; font: 11px 'DejaVu Sans'; text-anchor: end" x="459.168798" y="163.14896" transform="rotate(-0 459.168798 163.14896)">$10k</text>
+     </g>
+    </g>
+    <g id="ytick_13">
+     <g id="line2d_32">
+      <path d="M 467.168798 114.083783 
+L 960.091875 114.083783 
+" clip-path="url(#p2a4de425c7)" style="fill: none; stroke: #e6ebf0; stroke-width: 0.8; stroke-linecap: square"/>
+     </g>
+     <g id="line2d_33"/>
+     <g id="text_25">
+      <text style="fill: #243247; font: 11px 'DejaVu Sans'; text-anchor: end" x="459.168798" y="118.262924" transform="rotate(-0 459.168798 118.262924)">$12k</text>
+     </g>
+    </g>
+    <g id="text_26">
+     <text style="fill: #243247; font: 11px 'DejaVu Sans'; text-anchor: middle" x="425.515204" y="244.8" transform="rotate(-90 425.515204 244.8)">Free cash / movement (USD)</text>
+    </g>
+   </g>
+   <g id="patch_7">
+    <path d="M 489.574392 383.4 
+L 546.322186 383.4 
+L 546.322186 380.617066 
+L 489.574392 380.617066 
+z
+" clip-path="url(#p2a4de425c7)" style="fill: #087e83"/>
+   </g>
+   <g id="patch_8">
+    <path d="M 587.415416 380.617066 
+L 644.16321 380.617066 
+L 644.16321 156.186885 
+L 587.415416 156.186885 
+z
+" clip-path="url(#p2a4de425c7)" style="fill: #c76b17"/>
+   </g>
+   <g id="patch_9">
+    <path d="M 685.25644 383.4 
+L 742.004233 383.4 
+L 742.004233 156.186885 
+L 685.25644 156.186885 
+z
+" clip-path="url(#p2a4de425c7)" style="fill: #2563a6"/>
+   </g>
+   <g id="patch_10">
+    <path d="M 783.097463 380.617066 
+L 839.845257 380.617066 
+L 839.845257 156.186885 
+L 783.097463 156.186885 
+z
+" clip-path="url(#p2a4de425c7)" style="fill: #7b8797"/>
+   </g>
+   <g id="patch_11">
+    <path d="M 880.938487 383.4 
+L 937.686281 383.4 
+L 937.686281 380.617066 
+L 880.938487 380.617066 
+z
+" clip-path="url(#p2a4de425c7)" style="fill: #087e83"/>
+   </g>
+   <g id="line2d_34">
+    <path d="M 547.300596 380.617066 
+L 586.437006 380.617066 
+" clip-path="url(#p2a4de425c7)" style="fill: none; stroke-dasharray: 3.7,1.6; stroke-dashoffset: 0; stroke: #7b8797"/>
+   </g>
+   <g id="line2d_35">
+    <path d="M 645.14162 156.186885 
+L 684.278029 156.186885 
+" clip-path="url(#p2a4de425c7)" style="fill: none; stroke-dasharray: 3.7,1.6; stroke-dashoffset: 0; stroke: #7b8797"/>
+   </g>
+   <g id="line2d_36">
+    <path d="M 742.982644 156.186885 
+L 782.119053 156.186885 
+" clip-path="url(#p2a4de425c7)" style="fill: none; stroke-dasharray: 3.7,1.6; stroke-dashoffset: 0; stroke: #7b8797"/>
+   </g>
+   <g id="line2d_37">
+    <path d="M 840.823667 380.617066 
+L 879.960077 380.617066 
+" clip-path="url(#p2a4de425c7)" style="fill: none; stroke-dasharray: 3.7,1.6; stroke-dashoffset: 0; stroke: #7b8797"/>
+   </g>
+   <g id="text_27">
+    <text style="fill: #243247; font: 700 11px 'DejaVu Sans'; text-anchor: middle" x="517.948289" y="370.474353" transform="rotate(-0 517.948289 370.474353)">$124</text>
+   </g>
+   <g id="text_28">
+    <text style="fill: #243247; font: 700 11px 'DejaVu Sans'; text-anchor: middle" x="615.789313" y="146.044173" transform="rotate(-0 615.789313 146.044173)">+$10,000</text>
+   </g>
+   <g id="text_29">
+    <text style="fill: #243247; font: 700 11px 'DejaVu Sans'; text-anchor: middle" x="713.630337" y="146.044173" transform="rotate(-0 713.630337 146.044173)">$10,124</text>
+   </g>
+   <g id="text_30">
+    <text style="fill: #243247; font: 700 11px 'DejaVu Sans'; text-anchor: middle" x="811.47136" y="146.044173" transform="rotate(-0 811.47136 146.044173)">−$10,000</text>
+   </g>
+   <g id="text_31">
+    <text style="fill: #243247; font: 700 11px 'DejaVu Sans'; text-anchor: middle" x="909.312384" y="370.474353" transform="rotate(-0 909.312384 370.474353)">$124</text>
+   </g>
+   <g id="text_32">
+    <text style="fill: #243247; font: 700 12px 'DejaVu Sans'; text-anchor: start" x="467.168798" y="86.2" transform="rotate(-0 467.168798 86.2)">2. Free-cash reservation waterfall</text>
+   </g>
+  </g>
+  <g id="text_33">
+   <text style="fill: #243247; font: 700 18px 'DejaVu Sans'; text-anchor: start" x="32.731875" y="26.637187" transform="rotate(-0 32.731875 26.637187)">New equity funds the campaign; it does not create profit</text>
+  </g>
+  <g id="text_34">
+   <text style="fill: #516176; font: 11px 'DejaVu Sans'; text-anchor: start" x="32.731875" y="45.006281" transform="rotate(-0 32.731875 45.006281)">Low-cash scenario • existing player obligations and reserves stay protected before new rewards</text>
+  </g>
+  <g id="text_35">
+   <text style="fill: #516176; font: 9.5px 'DejaVu Sans'" transform="translate(32.731875 455.895492)">The protected amount includes existing wallets, separate withdrawal/unsettled liabilities, current prizes and operating/risk buffers.</text>
+   <text style="fill: #516176; font: 9.5px 'DejaVu Sans'" transform="translate(32.731875 469.059895)">The small $124 balances are labeled explicitly; bar heights remain proportional. Company equity must be cleared first.</text>
+   <text style="fill: #516176; font: 9.5px 'DejaVu Sans'" transform="translate(32.731875 482.224297)">Neither new equity nor player deposits count as platform profit. Reserving a new pool does not cancel or spend existing obligations.</text>
+  </g>
+ </g>
+ <defs>
+  <clipPath id="p9604c62de3">
+   <rect x="62.971875" y="106.2" width="273.846154" height="277.2"/>
+  </clipPath>
+  <clipPath id="p2a4de425c7">
+   <rect x="467.168798" y="106.2" width="492.923077" height="277.2"/>
+  </clipPath>
+ </defs>
+</svg>
